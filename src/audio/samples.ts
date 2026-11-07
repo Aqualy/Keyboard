@@ -22,10 +22,25 @@ export const PRESS_SAMPLES = [
 
 export const RELEASE_SAMPLES = ['BACKSPACE', 'ENTER', 'SPACE', 'GENERIC']
 
-/** Long keys have their own recording. Other presses are recorded per row. */
-export function sampleName(key: Pick<KeyDefinition, 'code' | 'row'>, edge: KeyEdge) {
+const GENERIC = (name: string) => name.startsWith('GENERIC')
+
+/** Every recording a switch has, relative to its sound folder. */
+export function samplePaths(longKeySamples: boolean) {
+  const include = (name: string) => longKeySamples || GENERIC(name)
+  return [
+    ...PRESS_SAMPLES.filter(include).map((name) => `press/${name}`),
+    ...RELEASE_SAMPLES.filter(include).map((name) => `release/${name}`),
+  ]
+}
+
+/** Long keys have their own recording if the switch has one. Other presses vary by row. */
+export function sampleName(
+  key: Pick<KeyDefinition, 'code' | 'row'>,
+  edge: KeyEdge,
+  longKeySamples = true,
+) {
   const named = NAMED_KEYS[key.code]
-  if (named) return `${edge}/${named}`
+  if (named && longKeySamples) return `${edge}/${named}`
   return edge === 'press' ? `press/GENERIC_R${key.row}` : 'release/GENERIC'
 }
 

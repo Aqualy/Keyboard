@@ -3,12 +3,13 @@ import { existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { KEY_BY_CODE, KEYS } from '../data/layout'
-import { PLATES, SWITCHES } from '../data/options'
+import { hasLongKeySamples, PLATES, SWITCHES } from '../data/options'
 import {
   PLATE_TONES,
   playbackVariation,
   PRESS_SAMPLES,
   RELEASE_SAMPLES,
+  samplePaths,
   sampleName,
 } from './samples'
 
@@ -36,6 +37,12 @@ describe('sampleName', () => {
     expect(sampleName(key('KeyA'), 'release')).toBe('release/GENERIC')
   })
 
+  it('uses row sounds for a switch with no long key recordings', () => {
+    expect(sampleName(key('Space'), 'press', false)).toBe('press/GENERIC_R4')
+    expect(sampleName(key('Enter'), 'release', false)).toBe('release/GENERIC')
+    expect(samplePaths(false)).toHaveLength(6)
+  })
+
   it('only ever names a known sample', () => {
     const known = [
       ...PRESS_SAMPLES.map((name) => `press/${name}`),
@@ -49,10 +56,9 @@ describe('sampleName', () => {
 })
 
 describe('sound files', () => {
-  const files = SWITCHES.flatMap((option) => [
-    ...PRESS_SAMPLES.map((name) => `${option.id}/press/${name}`),
-    ...RELEASE_SAMPLES.map((name) => `${option.id}/release/${name}`),
-  ])
+  const files = SWITCHES.flatMap((option) =>
+    samplePaths(hasLongKeySamples(option.id)).map((path) => `${option.id}/${path}`),
+  )
 
   it.each(files)('%s.mp3 exists and is not empty', (file) => {
     const path = join(process.cwd(), 'public/sounds', `${file}.mp3`)

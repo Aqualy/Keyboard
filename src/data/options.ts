@@ -95,47 +95,138 @@ export const PROFILES = [
   },
 ] as const satisfies readonly { id: string; name: string; specs: SpecRow[] }[]
 
-export const SWITCHES = [
-  {
-    id: 'linear',
-    name: 'Linear',
-    stemHex: '#c4342f',
-    travel: 0.4,
-    specs: [
-      { label: 'Actuation', value: '45 g' },
-      { label: 'Feel', value: 'Smooth' },
-      { label: 'Sound', value: 'Soft' },
-    ],
-  },
-  {
-    id: 'tactile',
-    name: 'Tactile',
-    stemHex: '#8a5a33',
-    travel: 0.38,
-    specs: [
-      { label: 'Actuation', value: '55 g' },
-      { label: 'Feel', value: 'Bump' },
-      { label: 'Sound', value: 'Medium' },
-    ],
-  },
-  {
-    id: 'clicky',
-    name: 'Clicky',
-    stemHex: '#2f62b8',
-    travel: 0.36,
-    specs: [
-      { label: 'Actuation', value: '60 g' },
-      { label: 'Feel', value: 'Bump + click' },
-      { label: 'Sound', value: 'Loud' },
-    ],
-  },
-] as const satisfies readonly {
+export const SWITCH_TYPES = [
+  { id: 'linear', name: 'Linear' },
+  { id: 'tactile', name: 'Tactile' },
+  { id: 'clicky', name: 'Clicky' },
+] as const
+
+export type SwitchTypeId = (typeof SWITCH_TYPES)[number]['id']
+
+const switchSpecs = (maker: string, feel: string, weight: string): SpecRow[] => [
+  { label: 'Maker', value: maker },
+  { label: 'Feel', value: feel },
+  { label: 'Weight', value: weight },
+]
+
+interface SwitchOption {
   id: string
   name: string
+  type: SwitchTypeId
   stemHex: string
   travel: number
   specs: SpecRow[]
-}[]
+  /** False when the recording has no separate Backspace, Enter and Space sounds. */
+  longKeySamples?: boolean
+}
+
+export const SWITCHES = [
+  {
+    id: 'cream',
+    name: 'Cream',
+    type: 'linear',
+    stemHex: '#e6dcc3',
+    travel: 0.4,
+    specs: switchSpecs('NovelKeys', 'Smooth', 'Medium'),
+  },
+  {
+    id: 'alpaca',
+    name: 'Alpaca',
+    type: 'linear',
+    stemHex: '#d9a7c7',
+    travel: 0.4,
+    specs: switchSpecs('Primekb', 'Smooth', 'Medium'),
+  },
+  {
+    id: 'redink',
+    name: 'Red Ink',
+    type: 'linear',
+    stemHex: '#c4342f',
+    travel: 0.4,
+    specs: switchSpecs('Gateron', 'Smooth', 'Light'),
+  },
+  {
+    id: 'blackink',
+    name: 'Black Ink',
+    type: 'linear',
+    stemHex: '#2a2a2d',
+    travel: 0.4,
+    specs: switchSpecs('Gateron', 'Smooth', 'Medium'),
+  },
+  {
+    id: 'turquoise',
+    name: 'Tealio',
+    type: 'linear',
+    stemHex: '#2ba8a0',
+    travel: 0.36,
+    specs: switchSpecs('Zeal PC', 'Smooth', 'Heavy'),
+  },
+  {
+    id: 'mxblack',
+    name: 'MX Black',
+    type: 'linear',
+    stemHex: '#1f1f22',
+    travel: 0.4,
+    specs: switchSpecs('Cherry', 'Smooth', 'Heavy'),
+  },
+  {
+    id: 'holypanda',
+    name: 'Holy Panda',
+    type: 'tactile',
+    stemHex: '#b9a4dc',
+    travel: 0.38,
+    specs: switchSpecs('Drop', 'Sharp bump', 'Medium'),
+  },
+  {
+    id: 'mxbrown',
+    name: 'MX Brown',
+    type: 'tactile',
+    stemHex: '#7a4a2b',
+    travel: 0.4,
+    specs: switchSpecs('Cherry', 'Light bump', 'Light'),
+  },
+  {
+    id: 'topre',
+    name: 'Topre',
+    type: 'tactile',
+    stemHex: '#d8d8d4',
+    travel: 0.4,
+    specs: switchSpecs('Topre', 'Soft bump', 'Light'),
+  },
+  {
+    id: 'boxnavy',
+    name: 'Box Navy',
+    type: 'clicky',
+    stemHex: '#26406f',
+    travel: 0.36,
+    specs: switchSpecs('Kailh', 'Bump + click', 'Heavy'),
+  },
+  {
+    id: 'mxblue',
+    name: 'MX Blue',
+    type: 'clicky',
+    stemHex: '#2f62b8',
+    travel: 0.4,
+    longKeySamples: false,
+    specs: switchSpecs('Cherry', 'Bump + click', 'Medium'),
+  },
+  {
+    id: 'bluealps',
+    name: 'Blue Alps',
+    type: 'clicky',
+    stemHex: '#6fa8dc',
+    travel: 0.35,
+    specs: switchSpecs('SKCM', 'Bump + click', 'Medium'),
+  },
+  {
+    id: 'buckling',
+    name: 'Buckling Spring',
+    type: 'clicky',
+    stemHex: '#3b3b3e',
+    travel: 0.38,
+    specs: switchSpecs('IBM Model M', 'Bump + click', 'Heavy'),
+  },
+] as const satisfies readonly SwitchOption[]
 
 export const PLATES = [
   {
@@ -208,6 +299,12 @@ export type ProfileId = (typeof PROFILES)[number]['id']
 export type SwitchId = (typeof SWITCHES)[number]['id']
 export type PlateId = (typeof PLATES)[number]['id']
 export type KnobId = (typeof KNOBS)[number]['id']
+
+/** Whether a switch has its own Backspace, Enter and Space recordings. */
+export function hasLongKeySamples(id: SwitchId) {
+  const option = SWITCHES.find((candidate) => candidate.id === id)
+  return !(option && 'longKeySamples' in option) || option.longKeySamples
+}
 
 export const byId = <T extends { id: string }>(list: readonly T[], id: string): T => {
   const found = list.find((item) => item.id === id)

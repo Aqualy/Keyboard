@@ -1,24 +1,12 @@
 import { KEY_BY_CODE, LAYOUT } from '../data/layout'
-import type { SwitchId } from '../data/options'
+import { hasLongKeySamples, type SwitchId } from '../data/options'
 import { useConfig } from '../state/config'
 import { useStage } from '../state/stage'
-import {
-  PLATE_TONES,
-  playbackVariation,
-  PRESS_SAMPLES,
-  RELEASE_SAMPLES,
-  sampleName,
-  type KeyEdge,
-} from './samples'
+import { PLATE_TONES, playbackVariation, samplePaths, sampleName, type KeyEdge } from './samples'
 
 const KEYBOARD_HALF_WIDTH = (LAYOUT.columns * LAYOUT.pitch) / 2
 const KNOB_PITCH = 1.7
 const KNOB_GAIN = 0.5
-
-const SAMPLE_PATHS = [
-  ...PRESS_SAMPLES.map((name) => `press/${name}`),
-  ...RELEASE_SAMPLES.map((name) => `release/${name}`),
-]
 
 const url = (switchId: SwitchId, sample: string) =>
   `${import.meta.env.BASE_URL}sounds/${switchId}/${sample}.mp3`
@@ -47,7 +35,7 @@ function loadSwitch(audio: AudioContext, switchId: SwitchId) {
   const cached = decoded.get(switchId)
   if (cached) return cached
   const loading = Promise.all(
-    SAMPLE_PATHS.map((sample) => decodeSample(audio, switchId, sample)),
+    samplePaths(hasLongKeySamples(switchId)).map((sample) => decodeSample(audio, switchId, sample)),
   ).then((entries) => new Map(entries))
   // A failed load is forgotten, so the next key press tries again.
   loading.catch(() => decoded.delete(switchId))
@@ -92,7 +80,9 @@ async function playSample(sample: string, x: number, pitch?: number, level?: num
 
 export function playKey(code: string, edge: KeyEdge) {
   const key = KEY_BY_CODE.get(code)
-  if (key) void playSample(sampleName(key, edge), key.x)
+  if (!key) return
+  const longKeys = hasLongKeySamples(useConfig.getState().config.switch)
+  void playSample(sampleName(key, edge, longKeys), key.x)
 }
 
 export function playKnobTick() {

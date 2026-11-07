@@ -47,5 +47,4 @@ browser tests. Commit messages follow [Conventional Commits](https://www.convent
 
 Switch recordings in `public/sounds` come from
 [Mechanical Keyboard Simulator](https://github.com/tplai/kbsim) by Thomas Lai, under the MIT licence
-(`public/sounds/LICENSE.md`). Linear uses NovelKeys Cream, Tactile uses Holy Panda and Clicky uses Kailh Box
-Navy.
+(`public/sounds/LICENSE.md`). Each folder is named after the switch it was recorded from.

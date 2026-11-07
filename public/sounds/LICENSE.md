@@ -1,5 +1,5 @@
 Switch recordings from https://github.com/tplai/kbsim (src/assets/audio).
-linear = cream, tactile = holypanda, clicky = boxnavy. Files are unmodified.
+Each folder is named after its switch. Files are unmodified.
 
 Copyright (c) Thomas Lai
 

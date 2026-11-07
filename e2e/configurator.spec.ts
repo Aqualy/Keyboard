@@ -59,9 +59,10 @@ test('keycap colour targets one zone at a time', async ({ page }) => {
 
 test('switch choice updates its specs', async ({ page }) => {
   await openConfigurator(page)
-  await choose(page, 'Switch', 'Clicky')
+  await choose(page, 'Type', 'Clicky')
+  await choose(page, 'Switch', 'MX Blue')
   await expect(page.getByText('Bump + click')).toBeAttached()
-  await expect(page).toHaveURL(/switch=clicky/)
+  await expect(page).toHaveURL(/switch=mxblue/)
 })
 
 test('a shared URL restores the build after reload', async ({ page }) => {

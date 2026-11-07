@@ -18,10 +18,11 @@ test('plays the selected switch, and stays quiet when muted', async ({ page }) =
 
   await page.getByRole('button', { name: 'Turn sound on' }).click()
   await page.keyboard.press('KeyA')
-  await expect.poll(() => requested.some((url) => url.includes('/sounds/linear/'))).toBe(true)
+  await expect.poll(() => requested.some((url) => url.includes('/sounds/cream/'))).toBe(true)
 
-  await choose(page, 'Switch', 'Clicky')
-  await expect.poll(() => requested.some((url) => url.includes('/sounds/clicky/'))).toBe(true)
+  await choose(page, 'Type', 'Clicky')
+  await choose(page, 'Switch', 'MX Blue')
+  await expect.poll(() => requested.some((url) => url.includes('/sounds/mxblue/'))).toBe(true)
   expect(errors).toEqual([])
 })
 

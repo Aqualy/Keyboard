@@ -13,6 +13,7 @@ import {
   SWITCHES,
   SWITCH_TYPES,
   byId,
+  hasLightColour,
 } from '../data/options'
 import { SIZES, STANDARDS } from '../data/layout'
 import { REGIONS } from '../data/regions'
@@ -213,8 +214,7 @@ function LightingFolder() {
         value={config.rgb}
         onChange={(id) => update({ rgb: id })}
       />
-      {/* Only a static effect has one colour; the others run through the spectrum. */}
-      {config.rgb === 'static' && (
+      {hasLightColour(config.rgb) && (
         <Swatches
           label="Light colour"
           options={RGB_COLOURS}

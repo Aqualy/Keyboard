@@ -1,4 +1,4 @@
-import { CanvasTexture, Color, Vector2 } from 'three'
+import { CanvasTexture, Color, Vector2, Vector4 } from 'three'
 import {
   abs,
   attribute,
@@ -14,6 +14,7 @@ import {
   texture,
   time,
   uniform,
+  uniformArray,
   vec2,
   vec3,
 } from 'three/tsl'
@@ -51,6 +52,26 @@ export const uniforms = {
   rgbSpeed: uniform(1),
   /** Size of the key area in cm, set by each board, so legends and LED patterns fit it. */
   keyArea: uniform(new Vector2(1, 1)),
+  /** Seconds on the clock key presses are stamped with, for the reactive effect. */
+  ledClock: uniform(0),
+}
+
+/** How many recent presses the reactive effect remembers. Older ones have long faded. */
+const PRESS_SLOTS = 8
+const NEVER = -1000
+const EPOCH = performance.now()
+/** The LED clock, which starts with the page so it stays precise in a float. */
+export const ledNow = () => (performance.now() - EPOCH) / 1000
+
+/** Recent presses as (x, z in the plate frame, time pressed, unused). */
+const presses = Array.from({ length: PRESS_SLOTS }, () => new Vector4(0, 0, NEVER, 0))
+const pressNode = uniformArray(presses, 'vec4' as const)
+let nextSlot = 0
+
+/** Stamps a key press at its position, so the reactive effect lights it and sends out a ring. */
+export function recordPress(x: number, z: number) {
+  presses[nextSlot].set(x, z, ledNow(), 0)
+  nextSlot = (nextSlot + 1) % PRESS_SLOTS
 }
 
 const KEY_AREA = uniforms.keyArea
@@ -70,11 +91,40 @@ const hue = (h: FloatNode) =>
     1,
   )
 
+/** Board position of a point in the plate frame, as 0..1 across the key area. */
+const boardUv = (xz: Vec2Node) => xz.div(KEY_AREA).add(0.5)
+
+/** Ring speed of the reactive effect, in cm per second. */
+const RING_SPEED = 24
+
+/** Light from recent key presses at a point: the key itself, then a ring running outward. */
+const reactive = (xz: Vec2Node) => {
+  let light: FloatNode = float(0)
+  for (let i = 0; i < PRESS_SLOTS; i += 1) {
+    const press = pressNode.element(i)
+    const age = uniforms.ledClock.sub(press.z)
+    const distance = length(xz.sub(press.xy))
+    const key = float(1)
+      .sub(smoothstep(0.7, 1.3, distance))
+      .mul(clamp(float(1).sub(age.div(0.7)), 0, 1))
+    const fade = clamp(float(1).sub(age.div(1.1)), 0, 1)
+    const ring = float(1)
+      .sub(smoothstep(0, 1.4, abs(distance.sub(age.mul(RING_SPEED)))))
+      .mul(fade.mul(fade))
+      .mul(0.7)
+      // Visitors who ask for less motion get the key without the moving ring.
+      .mul(uniforms.rgbSpeed)
+    light = light.add(key.max(ring))
+  }
+  return light.min(1.4)
+}
+
 /**
- * LED colour at a point on the board, as 0..1 across the key area. Every part samples the same
- * pattern, so a wave runs continuously across caps, switches and plate.
+ * LED colour at a point in the plate frame, in cm. Every part samples the same pattern, so a
+ * wave runs continuously across caps, switches and plate.
  */
-const ledColour = (uv: Vec2Node) => {
+const ledColour = (xz: Vec2Node) => {
+  const uv = boardUv(xz)
   const t = time.mul(uniforms.rgbSpeed)
   const aspect = KEY_AREA.x.div(KEY_AREA.y)
   const fromCentre = length(uv.sub(0.5).mul(vec2(aspect, 1)))
@@ -85,15 +135,20 @@ const ledColour = (uv: Vec2Node) => {
   return select(
     effect.equal(1),
     uniforms.rgbColour,
-    select(effect.equal(2), spectrum, select(effect.equal(3), wave, ripple)),
+    select(
+      effect.equal(2),
+      spectrum,
+      select(
+        effect.equal(3),
+        wave,
+        select(effect.equal(4), ripple, uniforms.rgbColour.mul(reactive(xz))),
+      ),
+    ),
   )
 }
 
-/** Board position of a point in the plate frame, as 0..1 across the key area. */
-const boardUv = (xz: Vec2Node) => xz.div(KEY_AREA).add(0.5)
-
-const glow = (uv: Vec2Node, strength: number | FloatNode) =>
-  ledColour(uv).mul(uniforms.rgbIntensity).mul(strength)
+const glow = (xz: Vec2Node, strength: number | FloatNode) =>
+  ledColour(xz).mul(uniforms.rgbIntensity).mul(strength)
 
 export function createKeycapMaterial(legends: CanvasTexture) {
   const material = new MeshStandardNodeMaterial({ roughness: 0.56, metalness: 0 })
@@ -122,7 +177,7 @@ export function createKeycapMaterial(legends: CanvasTexture) {
   material.emissiveNode = Fn(() => {
     const key = attribute('aKey', 'vec2')
     const skirt = float(1).sub(smoothstep(0, 0.32, positionGeometry.y))
-    return glow(boardUv(key.add(positionGeometry.xz)), skirt.mul(0.9))
+    return glow(key.add(positionGeometry.xz), skirt.mul(0.9))
   })()
 
   return material
@@ -136,7 +191,7 @@ export function createHousingMaterial(base: Color) {
     const key = attribute('aKey', 'vec2')
     // Brightest at the top, where the light pipe is.
     const height = smoothstep(-0.2, 0.52, positionGeometry.y)
-    return glow(boardUv(key.add(positionGeometry.xz)), height.mul(1.4))
+    return glow(key.add(positionGeometry.xz), height.mul(1.4))
   })()
   return material
 }
@@ -174,7 +229,7 @@ export function createPlateMaterial() {
   const material = new MeshStandardNodeMaterial()
   material.colorNode = uniforms.plate
   // A faint wash where the LEDs spill onto the plate.
-  material.emissiveNode = glow(boardUv(positionGeometry.xz), 0.12)
+  material.emissiveNode = glow(positionGeometry.xz, 0.12)
   material.metalnessNode = uniforms.plateMetalness
   material.roughnessNode = uniforms.plateRoughness
   return material

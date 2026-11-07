@@ -26,6 +26,7 @@ import {
   createPlateMaterial,
   createShadowMaterial,
   createStemMaterial,
+  recordPress,
   uniforms,
 } from './materials'
 
@@ -311,6 +312,8 @@ export class KeyboardRig {
   }
 
   press(code: string) {
+    const state = this.keys.get(code)
+    if (state) recordPress(state.key.x, -state.key.y)
     this.animateKey(code, this.travel)
     gsap.to(this.flex.position, {
       y: -FLEX_DEPTH,

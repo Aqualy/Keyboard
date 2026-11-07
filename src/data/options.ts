@@ -301,6 +301,8 @@ export const RGB_EFFECTS = [
   { id: 'spectrum', name: 'Spectrum' },
   { id: 'wave', name: 'Wave' },
   { id: 'ripple', name: 'Ripple' },
+  // Dark until a key is pressed, then that key lights and a ring spreads from it.
+  { id: 'reactive', name: 'Reactive' },
 ] as const
 
 export const RGB_COLOURS = [
@@ -321,6 +323,9 @@ export const BRIGHTNESS = [
 
 export type RgbEffectId = (typeof RGB_EFFECTS)[number]['id']
 export type RgbColourId = (typeof RGB_COLOURS)[number]['id']
+/** Effects drawn in one chosen colour. The others run through the spectrum. */
+export const hasLightColour = (effect: RgbEffectId) => effect === 'static' || effect === 'reactive'
+
 export type BrightnessId = (typeof BRIGHTNESS)[number]['id']
 
 export type ColourwayId = (typeof COLOURWAYS)[number]['id']

@@ -138,6 +138,13 @@ describe('Folders', () => {
     expect(tab('Lighting')).toHaveTextContent('Static')
   })
 
+  it('offers a light colour for the reactive effect', async () => {
+    await open('Lighting')
+    await userEvent.click(within(group('Effect')).getByRole('radio', { name: 'Reactive' }))
+    await userEvent.click(within(group('Light colour')).getByRole('radio', { name: 'Pink' }))
+    expect(config()).toMatchObject({ rgb: 'reactive', rgbColour: 'pink' })
+  })
+
   it('offers the legends that fit the chosen standard', async () => {
     await open('Layout')
     const regions = () =>

@@ -1,22 +1,25 @@
-import { useThree } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import gsap from 'gsap'
 import { useEffect } from 'react'
 import { BRIGHTNESS, RGB_COLOURS, RGB_EFFECTS, byId } from '../data/options'
 import { motion, prefersReducedMotion } from '../motion'
 import { useConfig, type Config } from '../state/config'
 import { isDark, useStage } from '../state/stage'
-import { uniforms } from './materials'
+import { ledNow, uniforms } from './materials'
 
 /** Room light. The LEDs only read properly once it goes down. */
 const ROOM_BRIGHT = 1.02
 const ROOM_DARK = 0.2
 /** In a lit room the LEDs still show, just faintly. */
 const LIT_ROOM_SHARE = 0.3
+/** Reactive light only flashes, so it keeps more of its strength in a lit room. */
+const LIT_ROOM_REACTIVE_SHARE = 0.65
 
 function ledIntensity(config: Config, dark: boolean) {
   if (config.rgb === 'off') return 0
   const full = byId(BRIGHTNESS, config.brightness).intensity
-  return dark ? full : full * LIT_ROOM_SHARE
+  if (dark) return full
+  return full * (config.rgb === 'reactive' ? LIT_ROOM_REACTIVE_SHARE : LIT_ROOM_SHARE)
 }
 
 /** Drives the LEDs and the room light. Renders nothing. */
@@ -74,6 +77,10 @@ export function Lighting() {
       unsubscribeStage()
     }
   }, [scene])
+
+  useFrame(() => {
+    uniforms.ledClock.value = ledNow()
+  })
 
   return null
 }

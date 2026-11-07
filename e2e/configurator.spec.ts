@@ -131,6 +131,18 @@ test('the lighting folder darkens the room and lights the board', async ({ page 
   expect(errors).toEqual([])
 })
 
+test('the reactive effect lights a key when it is pressed', async ({ page }) => {
+  const errors = trackErrors(page)
+  await openConfigurator(page, '?rgb=reactive')
+  await openFolder(page, 'Lighting')
+  await waitForStillCanvas(page)
+  const dark = await canvasImage(page)
+  await page.keyboard.down('KeyG')
+  expect(sameImage(await canvasImage(page), dark)).toBe(false)
+  await page.keyboard.up('KeyG')
+  expect(errors).toEqual([])
+})
+
 test('every size and standard loads its own board', async ({ page }) => {
   const errors = trackErrors(page)
   await openConfigurator(page)

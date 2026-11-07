@@ -681,8 +681,32 @@ button {
     flex-direction: row;
   }
 
+  /* Seven tabs are too narrow to read in one row, so they wrap to two above the open folder. */
   .folders {
-    --folder-height: 340px;
+    --folder-height: 380px;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    row-gap: 6px;
+  }
+
+  .folder-tab {
+    grid-row: auto;
+    border-radius: var(--radius);
+  }
+
+  .folder[data-open='true'] .folder-tab {
+    min-height: 48px;
+    background: var(--ink);
+    color: var(--card);
+  }
+
+  .folder[data-open='true'] .folder-title {
+    color: var(--card);
+  }
+
+  .folder-body {
+    grid-row: 3;
+    border-radius: var(--radius) var(--radius) 0 0;
   }
 
   /* The tools sit in a row along the top, so the test starts below them. */

@@ -55,6 +55,8 @@ const FOLDER_OF: Record<string, string> = {
   Effect: 'Lighting',
   'Light colour': 'Lighting',
   Brightness: 'Lighting',
+  'Coiled cable': 'Desk',
+  'Desk mat': 'Desk',
 }
 
 /** Opens a configurator folder by its tab. */

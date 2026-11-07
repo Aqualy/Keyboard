@@ -1,7 +1,9 @@
 import { create } from 'zustand'
 import {
   BRIGHTNESS,
+  CABLES,
   CASE_COLOURS,
+  DESK_MATS,
   COLOURWAYS,
   FINISHES,
   KEYCAP_COLOURS,
@@ -13,6 +15,8 @@ import {
   RGB_EFFECTS,
   SWITCHES,
   type BrightnessId,
+  type CableId,
+  type DeskMatId,
   type Colours,
   type ColourwayId,
   type FinishId,
@@ -38,6 +42,8 @@ export interface Config extends Colours {
   size: SizeId
   standard: Standard
   region: RegionId
+  cable: CableId
+  mat: DeskMatId
 }
 
 export const DEFAULT_CONFIG: Config = {
@@ -54,6 +60,9 @@ export const DEFAULT_CONFIG: Config = {
   size: '65',
   standard: 'ansi',
   region: 'us',
+  // None, so the starting board stands on its own.
+  cable: 'none',
+  mat: 'none',
 }
 
 const CHOICES: Record<keyof Config, readonly { id: string }[]> = {
@@ -73,6 +82,8 @@ const CHOICES: Record<keyof Config, readonly { id: string }[]> = {
   size: SIZES,
   standard: STANDARDS,
   region: REGIONS,
+  cable: CABLES,
+  mat: DESK_MATS,
 }
 
 const FIELDS = Object.keys(CHOICES) as (keyof Config)[]

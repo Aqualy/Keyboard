@@ -39,6 +39,9 @@ export const uniforms = {
   plate: color(),
   knob: color(),
   stem: color(),
+  cable: color(),
+  connector: uniform(new Color('#cfd0d2')),
+  mat: color(),
   keycapRoughness: uniform(0.62),
   /** 1 for textured PBT, 0 for smooth ABS. */
   keycapGrain: uniform(1),

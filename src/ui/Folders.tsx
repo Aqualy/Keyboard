@@ -1,7 +1,9 @@
 import { useId, useState, type CSSProperties, type ReactNode } from 'react'
 import {
   BRIGHTNESS,
+  CABLES,
   CASE_COLOURS,
+  DESK_MATS,
   COLOURWAYS,
   FINISHES,
   KEYCAP_COLOURS,
@@ -38,6 +40,7 @@ const TITLES: Record<Section, string> = {
   switches: 'Switches',
   plate: 'Plate',
   lighting: 'Lighting',
+  desk: 'Desk',
 }
 
 interface FolderProps {
@@ -244,6 +247,30 @@ function LightingFolder() {
   )
 }
 
+function DeskFolder() {
+  const config = useConfig((state) => state.config)
+  const update = useConfig((state) => state.update)
+  const cable = byId(CABLES, config.cable)
+  const mat = byId(DESK_MATS, config.mat)
+  const parts = [config.cable !== 'none' && 'Cable', config.mat !== 'none' && 'Mat'].filter(Boolean)
+  return (
+    <Folder id="desk" value={parts.length ? parts.join(' + ') : 'None'}>
+      <Pills
+        label="Coiled cable"
+        options={CABLES}
+        value={cable.id}
+        onChange={(id) => update({ cable: id })}
+      />
+      <Pills
+        label="Desk mat"
+        options={DESK_MATS}
+        value={mat.id}
+        onChange={(id) => update({ mat: id })}
+      />
+    </Folder>
+  )
+}
+
 const FOLDERS: Record<Section, () => ReactNode> = {
   layout: LayoutFolder,
   case: CaseFolder,
@@ -251,6 +278,7 @@ const FOLDERS: Record<Section, () => ReactNode> = {
   switches: SwitchesFolder,
   plate: PlateFolder,
   lighting: LightingFolder,
+  desk: DeskFolder,
 }
 
 export function Folders() {

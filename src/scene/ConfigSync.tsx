@@ -2,7 +2,9 @@ import gsap from 'gsap'
 import { useEffect } from 'react'
 import { Color } from 'three'
 import {
+  CABLES,
   CASE_COLOURS,
+  DESK_MATS,
   FINISHES,
   KEYCAP_COLOURS,
   KNOBS,
@@ -51,6 +53,20 @@ function applyConfig(rig: KeyboardRig, config: Config, duration: number) {
   tweenColour(uniforms.knob, knob.hex, duration)
   gsap.to(uniforms.knobMetalness, { value: knob.metalness, duration, overwrite: true })
   gsap.to(uniforms.knobRoughness, { value: knob.roughness, duration, overwrite: true })
+
+  // A new cable or mat appears in its colour; only a change of colour is tweened.
+  if (config.cable !== 'none') {
+    tweenColour(
+      uniforms.cable,
+      byId(CABLES, config.cable).hex,
+      rig.desk.cable.visible ? duration : 0,
+    )
+  }
+  if (config.mat !== 'none') {
+    tweenColour(uniforms.mat, byId(DESK_MATS, config.mat).hex, rig.desk.mat.visible ? duration : 0)
+  }
+  rig.desk.setCable(config.cable !== 'none')
+  rig.desk.setMat(config.mat !== 'none')
 
   const switchOption = byId(SWITCHES, config.switch)
   tweenColour(uniforms.stem, switchOption.stemHex, duration)

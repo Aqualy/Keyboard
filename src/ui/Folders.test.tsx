@@ -20,7 +20,7 @@ describe('Folders', () => {
 
   it('starts with only the case folder open', () => {
     expect(tab('Case')).toHaveAttribute('aria-expanded', 'true')
-    for (const name of ['Keycaps', 'Switches', 'Plate', 'Lighting']) {
+    for (const name of ['Keycaps', 'Switches', 'Plate', 'Lighting', 'Desk']) {
       expect(tab(name)).toHaveAttribute('aria-expanded', 'false')
     }
     expect(screen.queryByRole('group', { name: 'Profile' })).not.toBeInTheDocument()
@@ -151,6 +151,16 @@ describe('Folders', () => {
     await userEvent.click(within(group('Effect')).getByRole('radio', { name: 'Reactive' }))
     await userEvent.click(within(group('Light colour')).getByRole('radio', { name: 'Pink' }))
     expect(config()).toMatchObject({ rgb: 'reactive', rgbColour: 'pink' })
+  })
+
+  it('adds a cable and a desk mat, and names them on the tab', async () => {
+    expect(tab('Desk')).toHaveTextContent('None')
+    await open('Desk')
+    await userEvent.click(within(group('Coiled cable')).getByRole('radio', { name: 'Sky' }))
+    expect(tab('Desk')).toHaveTextContent('Cable')
+    await userEvent.click(within(group('Desk mat')).getByRole('radio', { name: 'Grey' }))
+    expect(config()).toMatchObject({ cable: 'sky', mat: 'grey' })
+    expect(tab('Desk')).toHaveTextContent('Cable + Mat')
   })
 
   it('offers the legends that fit the chosen standard', async () => {

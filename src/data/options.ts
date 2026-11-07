@@ -302,6 +302,26 @@ export const KNOBS = [
   roughness: number
 }[]
 
+/** Cable colours match the case palette, so a cable can match the board or contrast it. */
+export const CABLES = [
+  { id: 'none', name: 'None', hex: '#000000' },
+  { id: 'white', name: 'White', hex: '#ecebe7' },
+  { id: 'black', name: 'Black', hex: '#1c1c1e' },
+  { id: 'sky', name: 'Sky', hex: '#a8c6e4' },
+  { id: 'beet', name: 'Beet', hex: '#4a2b46' },
+] as const
+
+export const DESK_MATS = [
+  { id: 'none', name: 'None', hex: '#000000' },
+  { id: 'grey', name: 'Grey', hex: '#8e9093' },
+  { id: 'black', name: 'Black', hex: '#232326' },
+  { id: 'sky', name: 'Sky', hex: '#9fbcd8' },
+  { id: 'beet', name: 'Beet', hex: '#4a2b46' },
+] as const
+
+export type CableId = (typeof CABLES)[number]['id']
+export type DeskMatId = (typeof DESK_MATS)[number]['id']
+
 /** Lighting effects. The shader reads the index, so keep the order in sync with materials.ts. */
 export const RGB_EFFECTS = [
   { id: 'off', name: 'Off' },

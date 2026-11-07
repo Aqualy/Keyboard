@@ -17,6 +17,7 @@ import { keycapMeshName, type KeyDefinition, type Layout } from '../data/layout'
 import { motion } from '../motion'
 import type { ProfileId } from '../data/options'
 import type { KeyHeat } from '../test/typing'
+import { Desk, portPosition } from './desk'
 import { LAYERS, liftsFor, staggerOrder, type Arrangement, type LayerId } from './layers'
 import {
   createCaseMaterial,
@@ -101,6 +102,7 @@ export class KeyboardRig {
   readonly tilted = new Group()
   readonly shadow: Mesh
   readonly layers = new Map<LayerId, Group>()
+  readonly desk: Desk
   knob: Object3D | undefined
   travel = 0.4
   private readonly flex = new Group()
@@ -181,6 +183,10 @@ export class KeyboardRig {
     shadowPlane.position.y = 0
     this.shadow = shadowPlane
     this.root.add(shadowPlane)
+
+    this.root.updateMatrixWorld(true)
+    this.desk = new Desk(layout, this.tilted.localToWorld(portPosition(layout)))
+    this.root.add(this.desk.group)
 
     const stems = this.buildSwitches(switchModel)
     this.buildKeycaps(keycaps, legends, stems)
@@ -303,6 +309,7 @@ export class KeyboardRig {
     })
     gsap.to(this.tilted.rotation, { x: spread ? 0 : this.tilt, duration, ease, overwrite: true })
     gsap.to(uniforms.shadow, { value: spread ? 0.45 : 1, duration, overwrite: true })
+    this.desk.unplug(spread)
   }
 
   /** Eases the board in once it has loaded. */

@@ -27,6 +27,8 @@ const SHOTS: Record<string, Shot> = {
   'isolate-keycaps': { direction: [0.5, 0.55, 0.67], target: [0, 2.6, 0], width: 42, height: 26 },
   'isolate-switches': { direction: [0.5, 0.5, 0.71], target: [0, 7.2, 0], width: 40, height: 31 },
   'isolate-plate': { direction: [0.5, 0.5, 0.71], target: [0, 7.2, 0], width: 40, height: 31 },
+  // Pulled back and higher, so the whole desk mat and the cable's run are in view.
+  desk: { direction: [0.3, 0.8, 0.52], target: [0, 0, -2.5], width: 50, height: 36 },
   test: { direction: [0, 0.82, 0.57], target: [0, 1.2, -1.6], width: 42, height: 24 },
 }
 
@@ -37,7 +39,8 @@ export function CameraRig() {
   // A string, so the selector stays stable between renders.
   const shotName = useStage((state) => {
     const arrangement = arrangementFor(state.mode, state.section)
-    return typeof arrangement === 'object' ? `isolate-${arrangement.isolate}` : state.mode
+    if (typeof arrangement === 'object') return `isolate-${arrangement.isolate}`
+    return state.mode === 'configure' && state.section === 'desk' ? 'desk' : state.mode
   })
   const resetRequest = useStage((state) => state.resetRequest)
   const caseShape = useConfig((state) => layoutOf(state.config).case)

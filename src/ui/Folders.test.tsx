@@ -77,6 +77,14 @@ describe('Folders', () => {
     expect(config()).toMatchObject({ mod: 'oak', alpha: 'white', accent: 'white' })
   })
 
+  it('offers matte PBT or shiny ABS keycaps', async () => {
+    await open('Keycaps')
+    expect(within(group('Material')).getByRole('radio', { name: 'PBT' })).toBeChecked()
+    await userEvent.click(within(group('Material')).getByRole('radio', { name: 'ABS' }))
+    expect(config().finish).toBe('abs')
+    expect(tab('Keycaps')).toHaveTextContent('Cherry ABS')
+  })
+
   it('switches to the legend palette for legends', async () => {
     await open('Keycaps')
     await userEvent.click(within(group('Colour')).getByRole('radio', { name: 'Legends' }))

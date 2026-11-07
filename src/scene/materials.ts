@@ -8,6 +8,7 @@ import {
   Fn,
   length,
   mix,
+  mx_noise_float,
   positionGeometry,
   select,
   smoothstep,
@@ -38,6 +39,9 @@ export const uniforms = {
   plate: color(),
   knob: color(),
   stem: color(),
+  keycapRoughness: uniform(0.62),
+  /** 1 for textured PBT, 0 for smooth ABS. */
+  keycapGrain: uniform(1),
   plateMetalness: uniform(0),
   plateRoughness: uniform(0.5),
   knobMetalness: uniform(1),
@@ -179,7 +183,11 @@ const heatColour = () => {
 const heated = (base: Node<'vec3'>) => mix(base, heatColour(), heatWeight().mul(0.7))
 
 export function createKeycapMaterial(legends: CanvasTexture) {
-  const material = new MeshStandardNodeMaterial({ roughness: 0.56, metalness: 0 })
+  const material = new MeshStandardNodeMaterial({ metalness: 0 })
+
+  // PBT's fine grain breaks up reflections; smooth ABS has none and catches the light.
+  const grain = mx_noise_float(positionGeometry.mul(90)).mul(0.12).mul(uniforms.keycapGrain)
+  material.roughnessNode = clamp(uniforms.keycapRoughness.add(grain), 0.05, 1)
 
   material.colorNode = Fn(() => {
     const zone = attribute('aZone', 'vec3')

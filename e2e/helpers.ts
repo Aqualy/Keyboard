@@ -40,6 +40,7 @@ const FOLDER_OF: Record<string, string> = {
   'Case colour': 'Case',
   Knob: 'Case',
   Profile: 'Keycaps',
+  Material: 'Keycaps',
   Colour: 'Keycaps',
   'Alphas colour': 'Keycaps',
   'Mods colour': 'Keycaps',

@@ -36,6 +36,7 @@ test('every option group changes the rendered board', async ({ page }) => {
     ['Case colour', 'Sky'],
     ['Profile', 'SA'],
     ['Profile', 'XDA'],
+    ['Material', 'ABS'],
     ['Plate', 'Brass'],
     ['Knob', 'Black'],
   ]

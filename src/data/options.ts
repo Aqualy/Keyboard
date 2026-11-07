@@ -95,6 +95,14 @@ export const PROFILES = [
   },
 ] as const satisfies readonly { id: string; name: string; specs: SpecRow[] }[]
 
+/** Keycap plastic. PBT is matte with a fine grain; ABS is smooth and shines. */
+export const FINISHES = [
+  { id: 'pbt', name: 'PBT', roughness: 0.62, grain: 1 },
+  { id: 'abs', name: 'ABS', roughness: 0.2, grain: 0 },
+] as const
+
+export type FinishId = (typeof FINISHES)[number]['id']
+
 export const SWITCH_TYPES = [
   { id: 'linear', name: 'Linear' },
   { id: 'tactile', name: 'Tactile' },

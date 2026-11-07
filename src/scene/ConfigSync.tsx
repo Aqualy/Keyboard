@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { Color } from 'three'
 import {
   CASE_COLOURS,
+  FINISHES,
   KEYCAP_COLOURS,
   KNOBS,
   LEGEND_COLOURS,
@@ -36,6 +37,10 @@ function applyConfig(rig: KeyboardRig, config: Config, duration: number) {
   tweenColour(uniforms.mod, byId(KEYCAP_COLOURS, config.mod).hex, duration)
   tweenColour(uniforms.accent, byId(KEYCAP_COLOURS, config.accent).hex, duration)
   tweenColour(uniforms.legend, byId(LEGEND_COLOURS, config.legend).hex, duration)
+
+  const finish = byId(FINISHES, config.finish)
+  gsap.to(uniforms.keycapRoughness, { value: finish.roughness, duration, overwrite: true })
+  gsap.to(uniforms.keycapGrain, { value: finish.grain, duration, overwrite: true })
 
   const plate = byId(PLATES, config.plate)
   tweenColour(uniforms.plate, plate.hex, duration)

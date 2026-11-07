@@ -3,6 +3,7 @@ import {
   BRIGHTNESS,
   CASE_COLOURS,
   COLOURWAYS,
+  FINISHES,
   KEYCAP_COLOURS,
   KNOBS,
   LEGEND_COLOURS,
@@ -133,12 +134,21 @@ function KeycapsFolder() {
   const update = useConfig((state) => state.update)
   const [zone, setZone] = useState<Zone>('alpha')
   return (
-    <Folder id="keycaps" value={byId(PROFILES, config.profile).name}>
+    <Folder
+      id="keycaps"
+      value={`${byId(PROFILES, config.profile).name} ${byId(FINISHES, config.finish).name}`}
+    >
       <Pills
         label="Profile"
         options={PROFILES}
         value={config.profile}
         onChange={(id) => update({ profile: id })}
+      />
+      <Pills
+        label="Material"
+        options={FINISHES}
+        value={config.finish}
+        onChange={(id) => update({ finish: id })}
       />
       <Pills label="Colour" options={ZONES} value={zone} onChange={setZone} />
       {zone === 'legend' ? (

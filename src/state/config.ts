@@ -3,6 +3,7 @@ import {
   BRIGHTNESS,
   CASE_COLOURS,
   COLOURWAYS,
+  FINISHES,
   KEYCAP_COLOURS,
   KNOBS,
   LEGEND_COLOURS,
@@ -14,6 +15,7 @@ import {
   type BrightnessId,
   type Colours,
   type ColourwayId,
+  type FinishId,
   type KnobId,
   type PlateId,
   type ProfileId,
@@ -26,6 +28,7 @@ import { defaultRegion, REGIONS, type RegionId, type Standard } from '../data/re
 
 export interface Config extends Colours {
   profile: ProfileId
+  finish: FinishId
   switch: SwitchId
   plate: PlateId
   knob: KnobId
@@ -40,6 +43,7 @@ export interface Config extends Colours {
 export const DEFAULT_CONFIG: Config = {
   ...COLOURWAYS[0].colours,
   profile: 'cherry',
+  finish: 'pbt',
   switch: 'cream',
   plate: 'pc',
   knob: 'silver',
@@ -59,6 +63,7 @@ const CHOICES: Record<keyof Config, readonly { id: string }[]> = {
   accent: KEYCAP_COLOURS,
   legend: LEGEND_COLOURS,
   profile: PROFILES,
+  finish: FINISHES,
   switch: SWITCHES,
   plate: PLATES,
   knob: KNOBS,

@@ -1,0 +1,903 @@
+{
+  "name": "GMK67",
+  "pitch": 1.905,
+  "columns": 16,
+  "rows": 5,
+  "knob": {
+    "x": 14.2875,
+    "y": 3.81
+  },
+  "indicator": {
+    "x": 8.5725,
+    "y": -3.81
+  },
+  "case": {
+    "width": 32.5,
+    "depth": 12,
+    "cornerRadius": 0.32,
+    "topZ": 0.55,
+    "partingZ": -0.3,
+    "frontBottomZ": -1.45,
+    "tiltDegrees": 5.2
+  },
+  "keys": [
+    {
+      "code": "Escape",
+      "legend": [
+        "Esc"
+      ],
+      "width": 1,
+      "zone": "accent",
+      "row": 0,
+      "x": -14.2875,
+      "y": 3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Digit1",
+      "legend": [
+        "!",
+        "1"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 0,
+      "x": -12.3825,
+      "y": 3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Digit2",
+      "legend": [
+        "@",
+        "2"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 0,
+      "x": -10.4775,
+      "y": 3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Digit3",
+      "legend": [
+        "#",
+        "3"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 0,
+      "x": -8.5725,
+      "y": 3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Digit4",
+      "legend": [
+        "$",
+        "4"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 0,
+      "x": -6.6675,
+      "y": 3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Digit5",
+      "legend": [
+        "%",
+        "5"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 0,
+      "x": -4.7625,
+      "y": 3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Digit6",
+      "legend": [
+        "^",
+        "6"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 0,
+      "x": -2.8575,
+      "y": 3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Digit7",
+      "legend": [
+        "&",
+        "7"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 0,
+      "x": -0.9525,
+      "y": 3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Digit8",
+      "legend": [
+        "*",
+        "8"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 0,
+      "x": 0.9525,
+      "y": 3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Digit9",
+      "legend": [
+        "(",
+        "9"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 0,
+      "x": 2.8575,
+      "y": 3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Digit0",
+      "legend": [
+        ")",
+        "0"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 0,
+      "x": 4.7625,
+      "y": 3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Minus",
+      "legend": [
+        "_",
+        "-"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 0,
+      "x": 6.6675,
+      "y": 3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Equal",
+      "legend": [
+        "+",
+        "="
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 0,
+      "x": 8.5725,
+      "y": 3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Backspace",
+      "legend": [
+        "Backspace"
+      ],
+      "width": 2,
+      "zone": "mod",
+      "row": 0,
+      "x": 11.43,
+      "y": 3.81,
+      "stabilized": true,
+      "homing": false
+    },
+    {
+      "code": "Tab",
+      "legend": [
+        "Tab"
+      ],
+      "width": 1.5,
+      "zone": "mod",
+      "row": 1,
+      "x": -13.8112,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyQ",
+      "legend": [
+        "Q"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 1,
+      "x": -11.43,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyW",
+      "legend": [
+        "W"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 1,
+      "x": -9.525,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyE",
+      "legend": [
+        "E"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 1,
+      "x": -7.62,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyR",
+      "legend": [
+        "R"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 1,
+      "x": -5.715,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyT",
+      "legend": [
+        "T"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 1,
+      "x": -3.81,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyY",
+      "legend": [
+        "Y"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 1,
+      "x": -1.905,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyU",
+      "legend": [
+        "U"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 1,
+      "x": 0,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyI",
+      "legend": [
+        "I"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 1,
+      "x": 1.905,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyO",
+      "legend": [
+        "O"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 1,
+      "x": 3.81,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyP",
+      "legend": [
+        "P"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 1,
+      "x": 5.715,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "BracketLeft",
+      "legend": [
+        "{",
+        "["
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 1,
+      "x": 7.62,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "BracketRight",
+      "legend": [
+        "}",
+        "]"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 1,
+      "x": 9.525,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Backslash",
+      "legend": [
+        "|",
+        "\\"
+      ],
+      "width": 1.5,
+      "zone": "alpha",
+      "row": 1,
+      "x": 11.9063,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "PageUp",
+      "legend": [
+        "PgUp"
+      ],
+      "width": 1,
+      "zone": "mod",
+      "row": 1,
+      "x": 14.2875,
+      "y": 1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "CapsLock",
+      "legend": [
+        "Caps Lock"
+      ],
+      "width": 1.75,
+      "zone": "mod",
+      "row": 2,
+      "x": -13.5731,
+      "y": 0,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyA",
+      "legend": [
+        "A"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 2,
+      "x": -10.9537,
+      "y": 0,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyS",
+      "legend": [
+        "S"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 2,
+      "x": -9.0488,
+      "y": 0,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyD",
+      "legend": [
+        "D"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 2,
+      "x": -7.1437,
+      "y": 0,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyF",
+      "legend": [
+        "F"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 2,
+      "x": -5.2388,
+      "y": 0,
+      "stabilized": false,
+      "homing": true
+    },
+    {
+      "code": "KeyG",
+      "legend": [
+        "G"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 2,
+      "x": -3.3338,
+      "y": 0,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyH",
+      "legend": [
+        "H"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 2,
+      "x": -1.4287,
+      "y": 0,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyJ",
+      "legend": [
+        "J"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 2,
+      "x": 0.4763,
+      "y": 0,
+      "stabilized": false,
+      "homing": true
+    },
+    {
+      "code": "KeyK",
+      "legend": [
+        "K"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 2,
+      "x": 2.3813,
+      "y": 0,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyL",
+      "legend": [
+        "L"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 2,
+      "x": 4.2862,
+      "y": 0,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Semicolon",
+      "legend": [
+        ":",
+        ";"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 2,
+      "x": 6.1913,
+      "y": 0,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Quote",
+      "legend": [
+        "\"",
+        "'"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 2,
+      "x": 8.0962,
+      "y": 0,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Enter",
+      "legend": [
+        "Enter"
+      ],
+      "width": 2.25,
+      "zone": "accent",
+      "row": 2,
+      "x": 11.1919,
+      "y": 0,
+      "stabilized": true,
+      "homing": false
+    },
+    {
+      "code": "PageDown",
+      "legend": [
+        "PgDn"
+      ],
+      "width": 1,
+      "zone": "mod",
+      "row": 2,
+      "x": 14.2875,
+      "y": 0,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "ShiftLeft",
+      "legend": [
+        "Shift"
+      ],
+      "width": 2.25,
+      "zone": "mod",
+      "row": 3,
+      "x": -13.0969,
+      "y": -1.905,
+      "stabilized": true,
+      "homing": false
+    },
+    {
+      "code": "KeyZ",
+      "legend": [
+        "Z"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 3,
+      "x": -10.0013,
+      "y": -1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyX",
+      "legend": [
+        "X"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 3,
+      "x": -8.0962,
+      "y": -1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyC",
+      "legend": [
+        "C"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 3,
+      "x": -6.1913,
+      "y": -1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyV",
+      "legend": [
+        "V"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 3,
+      "x": -4.2862,
+      "y": -1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyB",
+      "legend": [
+        "B"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 3,
+      "x": -2.3813,
+      "y": -1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyN",
+      "legend": [
+        "N"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 3,
+      "x": -0.4763,
+      "y": -1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "KeyM",
+      "legend": [
+        "M"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 3,
+      "x": 1.4287,
+      "y": -1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Comma",
+      "legend": [
+        "<",
+        ","
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 3,
+      "x": 3.3338,
+      "y": -1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Period",
+      "legend": [
+        ">",
+        "."
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 3,
+      "x": 5.2388,
+      "y": -1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Slash",
+      "legend": [
+        "?",
+        "/"
+      ],
+      "width": 1,
+      "zone": "alpha",
+      "row": 3,
+      "x": 7.1437,
+      "y": -1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "ShiftRight",
+      "legend": [
+        "Shift"
+      ],
+      "width": 1.75,
+      "zone": "mod",
+      "row": 3,
+      "x": 9.7631,
+      "y": -1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "ArrowUp",
+      "legend": [
+        "↑"
+      ],
+      "width": 1,
+      "zone": "mod",
+      "row": 3,
+      "x": 12.3825,
+      "y": -1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "End",
+      "legend": [
+        "End"
+      ],
+      "width": 1,
+      "zone": "mod",
+      "row": 3,
+      "x": 14.2875,
+      "y": -1.905,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "ControlLeft",
+      "legend": [
+        "Ctrl"
+      ],
+      "width": 1.25,
+      "zone": "mod",
+      "row": 4,
+      "x": -14.0494,
+      "y": -3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "MetaLeft",
+      "legend": [
+        "Win"
+      ],
+      "width": 1.25,
+      "zone": "mod",
+      "row": 4,
+      "x": -11.6681,
+      "y": -3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "AltLeft",
+      "legend": [
+        "Alt"
+      ],
+      "width": 1.25,
+      "zone": "mod",
+      "row": 4,
+      "x": -9.2869,
+      "y": -3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Space",
+      "legend": [
+        ""
+      ],
+      "width": 6.25,
+      "zone": "alpha",
+      "row": 4,
+      "x": -2.1431,
+      "y": -3.81,
+      "stabilized": true,
+      "homing": false
+    },
+    {
+      "code": "AltRight",
+      "legend": [
+        "Alt"
+      ],
+      "width": 1,
+      "zone": "mod",
+      "row": 4,
+      "x": 4.7625,
+      "y": -3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "Fn",
+      "legend": [
+        "Fn"
+      ],
+      "width": 1,
+      "zone": "mod",
+      "row": 4,
+      "x": 6.6675,
+      "y": -3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "ArrowLeft",
+      "legend": [
+        "←"
+      ],
+      "width": 1,
+      "zone": "mod",
+      "row": 4,
+      "x": 10.4775,
+      "y": -3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "ArrowDown",
+      "legend": [
+        "↓"
+      ],
+      "width": 1,
+      "zone": "mod",
+      "row": 4,
+      "x": 12.3825,
+      "y": -3.81,
+      "stabilized": false,
+      "homing": false
+    },
+    {
+      "code": "ArrowRight",
+      "legend": [
+        "→"
+      ],
+      "width": 1,
+      "zone": "mod",
+      "row": 4,
+      "x": 14.2875,
+      "y": -3.81,
+      "stabilized": false,
+      "homing": false
+    }
+  ]
+}

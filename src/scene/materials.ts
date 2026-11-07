@@ -39,6 +39,9 @@ export const uniforms = {
   plate: color(),
   knob: color(),
   stem: color(),
+  /** Stem colour of the compared switch, on the left half while comparing. */
+  stemCompare: color(),
+  comparing: uniform(0),
   cable: color(),
   connector: uniform(new Color('#cfd0d2')),
   mat: color(),
@@ -286,7 +289,14 @@ export function createKnobMaterial() {
 
 export function createStemMaterial() {
   const material = new MeshStandardNodeMaterial({ roughness: 0.32, metalness: 0 })
-  material.colorNode = uniforms.stem
+  material.colorNode = Fn(() => {
+    const left = attribute('aKey', 'vec2').x.lessThan(0)
+    return select(
+      left.and(uniforms.comparing.greaterThan(0.5)),
+      uniforms.stemCompare,
+      uniforms.stem,
+    )
+  })()
   return material
 }
 

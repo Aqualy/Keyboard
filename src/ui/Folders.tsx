@@ -174,11 +174,31 @@ function KeycapsFolder() {
   )
 }
 
+/** Holds the current switch on the left half, so the next pick can be heard against it. */
+function CompareButton() {
+  const chosen = useConfig((state) => state.config.switch)
+  const compare = useStage((state) => state.compare)
+  const setCompare = useStage((state) => state.setCompare)
+  return (
+    <button
+      type="button"
+      className="label-action"
+      aria-label={compare ? 'Stop comparing' : 'Compare switches'}
+      title={compare ? undefined : 'Keep this switch on the left half and pick another'}
+      onClick={() => setCompare(compare ? null : chosen)}
+    >
+      {compare ? 'Stop' : 'Compare'}
+    </button>
+  )
+}
+
 function SwitchesFolder() {
   const selected = useConfig((state) => byId(SWITCHES, state.config.switch))
   const update = useConfig((state) => state.update)
+  const compare = useStage((state) => state.compare)
+  const value = compare ? `${byId(SWITCHES, compare).name} vs ${selected.name}` : selected.name
   return (
-    <Folder id="switches" value={selected.name}>
+    <Folder id="switches" value={value}>
       <Pills
         label="Type"
         options={SWITCH_TYPES}
@@ -188,12 +208,15 @@ function SwitchesFolder() {
           if (first) update({ switch: first.id })
         }}
       />
-      <Pills
-        label="Switch"
-        options={SWITCHES.filter((option) => option.type === selected.type)}
-        value={selected.id}
-        onChange={(id) => update({ switch: id })}
-      />
+      <div className="with-action">
+        <Pills
+          label={compare ? `Right half · left is ${byId(SWITCHES, compare).name}` : 'Switch'}
+          options={SWITCHES.filter((option) => option.type === selected.type)}
+          value={selected.id}
+          onChange={(id) => update({ switch: id })}
+        />
+        <CompareButton />
+      </div>
       <Specs rows={selected.specs} />
       <SwitchCutaway className="cutaway-folder" />
     </Folder>

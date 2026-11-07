@@ -14,7 +14,7 @@ const config = () => useConfig.getState().config
 describe('Folders', () => {
   beforeEach(() => {
     useConfig.setState({ config: DEFAULT_CONFIG })
-    useStage.setState({ section: 'case' })
+    useStage.setState({ section: 'case', compare: null })
     render(<Folders />)
   })
 
@@ -112,6 +112,19 @@ describe('Folders', () => {
       seen.push(...(names as string[]))
     }
     expect(seen.sort()).toEqual(SWITCHES.map((option) => option.name).sort())
+  })
+
+  it('holds one switch on the left half to compare with the next', async () => {
+    await open('Switches')
+    await userEvent.click(screen.getByRole('button', { name: 'Compare switches' }))
+    expect(useStage.getState().compare).toBe('cream')
+    await userEvent.click(
+      within(group('Right half · left is Cream')).getByRole('radio', { name: 'Red Ink' }),
+    )
+    expect(tab('Switches')).toHaveTextContent('Cream vs Red Ink')
+    await userEvent.click(screen.getByRole('button', { name: 'Stop comparing' }))
+    expect(useStage.getState().compare).toBeNull()
+    expect(config().switch).toBe('redink')
   })
 
   it('selects the first switch of a new type', async () => {

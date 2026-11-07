@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { stepVolume, useStage } from './stage'
+import { stepVolume, switchForKey, useStage } from './stage'
 
 describe('knob volume', () => {
   beforeEach(() => {
@@ -26,5 +26,13 @@ describe('knob volume', () => {
     expect(useStage.getState().soundOn).toBe(false)
     useStage.getState().turnVolume(1, { x: 0, y: 0 })
     expect(useStage.getState().soundOn).toBe(true)
+  })
+})
+
+describe('switch comparison', () => {
+  it('plays the compared switch on the left half only', () => {
+    expect(switchForKey(-3, 'redink', 'cream')).toBe('cream')
+    expect(switchForKey(3, 'redink', 'cream')).toBe('redink')
+    expect(switchForKey(-3, 'redink', null)).toBe('redink')
   })
 })

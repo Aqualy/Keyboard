@@ -211,7 +211,9 @@ export class KeyboardRig {
       this.layout.keys,
       'housings',
     )
-    const stems = instanced(stemNode.geometry, createStemMaterial(), this.layout.keys, 'stems')
+    const stemGeometry = stemNode.geometry.clone()
+    stemGeometry.setAttribute('aKey', housingGeometry.getAttribute('aKey'))
+    const stems = instanced(stemGeometry, createStemMaterial(), this.layout.keys, 'stems')
     this.layout.keys.forEach((key, index) => {
       place({ mesh: housings, index, baseY: 0 }, key, 0)
       place({ mesh: stems, index, baseY: 0 }, key, 0)

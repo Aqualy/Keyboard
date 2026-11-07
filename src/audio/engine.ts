@@ -1,6 +1,6 @@
 import { hasLongKeySamples, type SwitchId } from '../data/options'
 import { currentKey, currentLayout, useConfig } from '../state/config'
-import { useStage } from '../state/stage'
+import { switchForKey, useStage } from '../state/stage'
 import {
   PLATE_TONES,
   playbackVariation,
@@ -48,8 +48,15 @@ function loadSwitch(audio: AudioContext, switchId: SwitchId) {
   return loading
 }
 
-function play(audio: AudioContext, buffer: AudioBuffer, x: number, pitch = 1, level = 1) {
-  const { plate, switch: switchId } = useConfig.getState().config
+function play(
+  audio: AudioContext,
+  buffer: AudioBuffer,
+  switchId: SwitchId,
+  x: number,
+  pitch = 1,
+  level = 1,
+) {
+  const { plate } = useConfig.getState().config
   // Squared, so each knob click sounds like an even step in loudness.
   const volumeLevel = useStage.getState().volume ** 2
   const tone = PLATE_TONES[plate]
@@ -74,14 +81,20 @@ function play(audio: AudioContext, buffer: AudioBuffer, x: number, pitch = 1, le
   source.start()
 }
 
-async function playSample(sample: string, x: number, pitch?: number, level?: number) {
+async function playSample(
+  switchId: SwitchId,
+  sample: string,
+  x: number,
+  pitch?: number,
+  level?: number,
+) {
   if (!useStage.getState().soundOn) return
   const audio = audioContext()
   if (!audio) return
   try {
-    const samples = await loadSwitch(audio, useConfig.getState().config.switch)
+    const samples = await loadSwitch(audio, switchId)
     const buffer = samples.get(sample)
-    if (buffer) play(audio, buffer, x, pitch, level)
+    if (buffer) play(audio, buffer, switchId, x, pitch, level)
   } catch {
     // Sound is a bonus. The keyboard keeps working without it.
   }
@@ -90,12 +103,17 @@ async function playSample(sample: string, x: number, pitch?: number, level?: num
 export function playKey(code: string, edge: KeyEdge) {
   const key = currentKey(code)
   if (!key) return
-  const longKeys = hasLongKeySamples(useConfig.getState().config.switch)
-  void playSample(sampleName(key, edge, longKeys), key.x)
+  const switchId = switchForKey(
+    key.x,
+    useConfig.getState().config.switch,
+    useStage.getState().compare,
+  )
+  void playSample(switchId, sampleName(key, edge, hasLongKeySamples(switchId)), key.x)
 }
 
 export function playKnobTick() {
-  void playSample('release/GENERIC', currentLayout().knob.x, KNOB_PITCH, KNOB_GAIN)
+  const { switch: switchId } = useConfig.getState().config
+  void playSample(switchId, 'release/GENERIC', currentLayout().knob.x, KNOB_PITCH, KNOB_GAIN)
 }
 
 /** Decodes a switch ahead of use, once sound has started, so changing it has no delay. */

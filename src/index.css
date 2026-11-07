@@ -375,8 +375,37 @@ button {
 }
 
 /* A switch list wraps to two rows, so it takes the full height beside type and specs. */
-.folder-body:has(> .specs) > .choice:nth-child(2) {
+.folder-body:has(> .specs) > :nth-child(2) {
   grid-row: span 2;
+}
+
+/* A small action on a group's label row, such as Compare beside the switch list. */
+.with-action {
+  position: relative;
+  min-width: 0;
+}
+
+/* Room for the action, so a long label wraps instead of running under it. */
+.with-action .label {
+  padding-right: 76px;
+}
+
+.label-action {
+  position: absolute;
+  top: -2px;
+  right: 0;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--blue);
+  font: 500 11px/1.5 var(--mono);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.label-action:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 @keyframes folder-open {

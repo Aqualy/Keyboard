@@ -16,6 +16,8 @@ import {
 import { preloadSwitch } from '../audio/engine'
 import { motion } from '../motion'
 import { useConfig, type Config } from '../state/config'
+import { useStage } from '../state/stage'
+import type { SwitchId } from '../data/options'
 import type { KeyboardRig } from './KeyboardRig'
 import { uniforms } from './materials'
 
@@ -73,13 +75,25 @@ function applyConfig(rig: KeyboardRig, config: Config, duration: number) {
   rig.travel = switchOption.travel
 }
 
+function applyCompare(compare: SwitchId | null) {
+  uniforms.comparing.value = compare ? 1 : 0
+  if (compare) {
+    uniforms.stemCompare.value.set(byId(SWITCHES, compare).stemHex)
+    preloadSwitch(compare)
+  }
+}
+
 /** Keeps the 3D scene matching the configuration. Renders nothing. */
 export function ConfigSync({ rig }: { rig: KeyboardRig }) {
   useEffect(() => {
     const { config } = useConfig.getState()
     applyConfig(rig, config, 0)
     rig.setProfile(config.profile)
-    return useConfig.subscribe((state, previous) => {
+    applyCompare(useStage.getState().compare)
+    const unsubscribeStage = useStage.subscribe((state, previous) => {
+      if (state.compare !== previous.compare) applyCompare(state.compare)
+    })
+    const unsubscribeConfig = useConfig.subscribe((state, previous) => {
       if (state.config === previous.config) return
       applyConfig(rig, state.config, motion(COLOUR_SECONDS))
       if (state.config.switch !== previous.config.switch) preloadSwitch(state.config.switch)
@@ -87,6 +101,10 @@ export function ConfigSync({ rig }: { rig: KeyboardRig }) {
         rig.changeProfile(state.config.profile)
       }
     })
+    return () => {
+      unsubscribeStage()
+      unsubscribeConfig()
+    }
   }, [rig])
 
   return null

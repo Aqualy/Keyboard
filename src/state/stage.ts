@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { SwitchId } from '../data/options'
 import type { KeyHeat } from '../test/typing'
 
 export type StageMode = 'configure' | 'exploded' | 'test'
@@ -50,6 +51,9 @@ interface StageStore {
   /** Turns the volume by some clicks at a point on the stage. */
   turnVolume: (clicks: number, at: { x: number; y: number }) => void
   hideVolume: () => void
+  /** A switch held on the left half of the board, to hear against the chosen one on the right. */
+  compare: SwitchId | null
+  setCompare: (compare: SwitchId | null) => void
   /** A finished typing run, shown on the board as a heatmap. */
   heatmap: Record<string, KeyHeat> | null
   setHeatmap: (heatmap: Record<string, KeyHeat> | null) => void
@@ -85,6 +89,8 @@ export const useStage = create<StageStore>((set) => ({
     }),
   hideVolume: () => set({ volumeLabel: null }),
   heatmap: null,
+  compare: null,
+  setCompare: (compare) => set({ compare }),
   setHeatmap: (heatmap) => set({ heatmap }),
   setKnobActive: (knobActive) => set({ knobActive }),
   setMode: (mode) => set({ mode, hoveredPart: null, heatmap: null }),
@@ -99,3 +105,7 @@ export const useStage = create<StageStore>((set) => ({
 /** The room goes dark while lighting is being configured, so the LEDs can be seen. */
 export const isDark = (state: Pick<StageStore, 'mode' | 'section'>) =>
   state.mode === 'configure' && state.section === 'lighting'
+
+/** Keys left of the board's centre play the compared switch, the rest play the chosen one. */
+export const switchForKey = (x: number, chosen: SwitchId, compare: SwitchId | null) =>
+  compare && x < 0 ? compare : chosen

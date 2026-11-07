@@ -181,6 +181,16 @@ def merge_flat_faces(obj):
     bm.free()
 
 
+def assert_outward(obj):
+    """Browsers hide back faces, so an inside-out part vanishes there but not in Blender."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    volume = bm.calc_volume(signed=True)
+    bm.free()
+    if volume <= 0:
+        raise RuntimeError(f"{obj.name} is inside out (volume {volume:.2f})")
+
+
 def flatten_large_faces(obj):
     """Stops big flat panels picking up shading from the small bevels around them."""
     mod = obj.modifiers.new("weighted", "WEIGHTED_NORMAL")
@@ -229,6 +239,8 @@ def extruded_profile(name, profile):
     for i in range(count):
         j = (i + 1) % count
         bm.faces.new([left[i], left[j], right[j], right[i]])
+    # The polygon can arrive in either direction, and an inverted cutter inverts the result.
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     return to_object(name, bm)
 
 
@@ -270,6 +282,7 @@ def build_upper_lid(mat):
     boolean(lid, to_object("knobHole", bm))
     soften(lid, 0.035, 2, 40, 34)
     flatten_large_faces(lid)
+    assert_outward(lid)
     return lid
 
 
@@ -306,6 +319,7 @@ def build_lower_lid(mat):
     # No bevel here. Its small faces would smear shading across these large flat walls.
     merge_flat_faces(lid)
     smooth_shade(lid, 30)
+    assert_outward(lid)
     return lid
 
 

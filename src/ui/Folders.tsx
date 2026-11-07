@@ -14,6 +14,8 @@ import {
   SWITCH_TYPES,
   byId,
 } from '../data/options'
+import { SIZES, STANDARDS } from '../data/layout'
+import { REGIONS } from '../data/regions'
 import { matchColourway, useConfig } from '../state/config'
 import { SECTIONS, useStage, type Section } from '../state/stage'
 import { Pills, Specs, Swatches } from './controls'
@@ -28,6 +30,7 @@ const ZONES = [
 type Zone = (typeof ZONES)[number]['id']
 
 const TITLES: Record<Section, string> = {
+  layout: 'Layout',
   case: 'Case',
   keycaps: 'Keycaps',
   switches: 'Switches',
@@ -63,6 +66,36 @@ function Folder({ id, value, children }: FolderProps) {
         {children}
       </div>
     </div>
+  )
+}
+
+function LayoutFolder() {
+  const config = useConfig((state) => state.config)
+  const update = useConfig((state) => state.update)
+  const size = byId(SIZES, config.size).name
+  const region = byId(REGIONS, config.region).name
+  return (
+    <Folder id="layout" value={`${size} ${region}`}>
+      <Pills
+        label="Size"
+        options={SIZES}
+        value={config.size}
+        onChange={(id) => update({ size: id })}
+      />
+      <Pills
+        label="Standard"
+        options={STANDARDS}
+        value={config.standard}
+        onChange={(id) => update({ standard: id })}
+      />
+      <Pills
+        label="Legends"
+        wide
+        options={REGIONS.filter((option) => option.standard === config.standard)}
+        value={config.region}
+        onChange={(id) => update({ region: id })}
+      />
+    </Folder>
   )
 }
 
@@ -202,6 +235,7 @@ function LightingFolder() {
 }
 
 const FOLDERS: Record<Section, () => ReactNode> = {
+  layout: LayoutFolder,
   case: CaseFolder,
   keycaps: KeycapsFolder,
   switches: SwitchesFolder,

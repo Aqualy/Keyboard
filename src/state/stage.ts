@@ -3,7 +3,7 @@ import { create } from 'zustand'
 export type StageMode = 'configure' | 'exploded' | 'test'
 
 /** The open folder in the configurator. One part of the keyboard is edited at a time. */
-export const SECTIONS = ['case', 'keycaps', 'switches', 'plate', 'lighting'] as const
+export const SECTIONS = ['layout', 'case', 'keycaps', 'switches', 'plate', 'lighting'] as const
 export type Section = (typeof SECTIONS)[number]
 
 export interface PartHover {

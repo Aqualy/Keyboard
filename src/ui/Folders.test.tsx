@@ -137,4 +137,19 @@ describe('Folders', () => {
     expect(config()).toMatchObject({ rgb: 'static', rgbColour: 'red' })
     expect(tab('Lighting')).toHaveTextContent('Static')
   })
+
+  it('offers the legends that fit the chosen standard', async () => {
+    await open('Layout')
+    const regions = () =>
+      within(group('Legends'))
+        .getAllByRole('radio')
+        .map((radio) => (radio.closest('label') as HTMLElement).textContent)
+    expect(regions()).toEqual(['US'])
+    await userEvent.click(within(group('Standard')).getByRole('radio', { name: 'ISO' }))
+    expect(regions()).toEqual(['UK', 'DE', 'FR', 'BE'])
+    await userEvent.click(within(group('Legends')).getByRole('radio', { name: 'BE' }))
+    await userEvent.click(within(group('Size')).getByRole('radio', { name: 'TKL' }))
+    expect(config()).toMatchObject({ size: 'tkl', standard: 'iso', region: 'be' })
+    expect(tab('Layout')).toHaveTextContent('TKL BE')
+  })
 })

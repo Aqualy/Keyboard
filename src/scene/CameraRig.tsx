@@ -3,6 +3,7 @@ import CameraControls from 'camera-controls'
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { motion, prefersReducedMotion } from '../motion'
+import { layoutOf, useConfig } from '../state/config'
 import { useStage } from '../state/stage'
 import { fitDistance } from './camera'
 import { arrangementFor } from './layers'
@@ -15,6 +16,9 @@ interface Shot {
   width: number
   height: number
 }
+
+/** Shots are framed for the 65% case and grow with larger ones. */
+const BASE_CASE = { width: 32.5, depth: 11.65 }
 
 const SHOTS: Record<string, Shot> = {
   configure: { direction: [0, 0.63, 0.77], target: [0, 1.5, 0.5], width: 36, height: 17.5 },
@@ -36,6 +40,8 @@ export function CameraRig() {
     return typeof arrangement === 'object' ? `isolate-${arrangement.isolate}` : state.mode
   })
   const resetRequest = useStage((state) => state.resetRequest)
+  const caseShape = useConfig((state) => layoutOf(state.config).case)
+  const scale = Math.max(caseShape.width / BASE_CASE.width, caseShape.depth / BASE_CASE.depth)
   const knobActive = useStage((state) => state.knobActive)
 
   const controls = useMemo(() => {
@@ -62,7 +68,7 @@ export function CameraRig() {
 
   useEffect(() => {
     const shot = SHOTS[shotName]
-    const distance = fitDistance(shot.width, shot.height, aspect)
+    const distance = fitDistance(shot.width * scale, shot.height * scale, aspect)
     controls.minDistance = distance * 0.45
     controls.maxDistance = distance * 1.8
     const [dx, dy, dz] = shot.direction
@@ -77,7 +83,7 @@ export function CameraRig() {
       tz,
       !prefersReducedMotion(),
     )
-  }, [controls, shotName, aspect, resetRequest])
+  }, [controls, shotName, aspect, resetRequest, scale])
 
   useEffect(() => {
     controls.enabled = !knobActive

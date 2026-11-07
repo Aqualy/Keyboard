@@ -1,4 +1,4 @@
-import { CanvasTexture, Color } from 'three'
+import { CanvasTexture, Color, Vector2 } from 'three'
 import {
   abs,
   attribute,
@@ -23,7 +23,7 @@ import {
   type Node,
   type Texture,
 } from 'three/webgpu'
-import { LAYOUT } from '../data/layout'
+import type { Layout } from '../data/layout'
 
 const color = () => uniform(new Color('#ffffff'))
 
@@ -49,9 +49,11 @@ export const uniforms = {
   rgbIntensity: uniform(0),
   /** 1 normally, 0 for visitors who ask for less motion, which freezes the effects. */
   rgbSpeed: uniform(1),
+  /** Size of the key area in cm, set by each board, so legends and LED patterns fit it. */
+  keyArea: uniform(new Vector2(1, 1)),
 }
 
-const KEY_AREA = vec2(LAYOUT.columns * LAYOUT.pitch, LAYOUT.rows * LAYOUT.pitch)
+const KEY_AREA = uniforms.keyArea
 
 type Vec2Node = Node<'vec2'>
 type FloatNode = Node<'float'>
@@ -146,8 +148,8 @@ export function createCaseMaterial() {
 }
 
 /** Depth below the lid seam, in the same S-curve the Blender script cuts. */
-const belowSeam = Fn(() => {
-  const { depth, frontBottomZ, partingZ, seamEndY, seamStartY, tiltDegrees } = LAYOUT.case
+const belowSeam = (shape: Layout['case']) => {
+  const { depth, frontBottomZ, partingZ, seamEndY, seamStartY, tiltDegrees } = shape
   const y = positionGeometry.z.negate()
   const desk = float(frontBottomZ).sub(
     y.add(depth / 2).mul(Math.tan((tiltDegrees * Math.PI) / 180)),
@@ -158,12 +160,12 @@ const belowSeam = Fn(() => {
     .mul(t)
     .mul(t.mul(t.mul(6).sub(15)).add(10))
   return mix(desk, float(partingZ), ease).sub(positionGeometry.y)
-})
+}
 
-export function createLowerLidMaterial() {
+export function createLowerLidMaterial(shape: Layout['case']) {
   const material = createCaseMaterial()
   // There are no real-time shadows, so the upper lid's shadow on this part is painted in.
-  const shade = smoothstep(0, 0.42, belowSeam()).mul(0.34).add(0.66)
+  const shade = smoothstep(0, 0.42, belowSeam(shape)).mul(0.34).add(0.66)
   material.colorNode = uniforms.case.mul(shade)
   return material
 }

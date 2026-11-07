@@ -262,7 +262,8 @@ button {
 }
 
 .folder[data-open='true'] {
-  flex-grow: 3;
+  /* Wide enough for two columns of controls beside five closed tabs. */
+  flex-grow: 4.2;
   height: 100%;
 }
 

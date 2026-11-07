@@ -131,6 +131,29 @@ test('the lighting folder darkens the room and lights the board', async ({ page 
   expect(errors).toEqual([])
 })
 
+test('every size and standard loads its own board', async ({ page }) => {
+  const errors = trackErrors(page)
+  await openConfigurator(page)
+  let previous = await canvasImage(page)
+  const steps: [string, string, RegExp, string][] = [
+    ['Standard', 'ISO', /standard=iso/, 'GMK67'],
+    ['Legends', 'BE', /region=be/, 'GMK67'],
+    ['Size', '75%', /size=75/, 'GMK 75%'],
+    ['Size', 'TKL', /size=tkl/, 'GMK TKL'],
+    ['Standard', 'ANSI', /size=tkl(?!.*standard)/, 'GMK TKL'],
+  ]
+  for (const [group, option, url, name] of steps) {
+    await choose(page, group, option)
+    await expect(page).toHaveURL(url)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(name)
+    await waitForStillCanvas(page)
+    const next = await canvasImage(page)
+    expect(sameImage(next, previous), `${group}: ${option}`).toBe(false)
+    previous = next
+  }
+  expect(errors).toEqual([])
+})
+
 test('explodes into labelled layers and reassembles', async ({ page, hasTouch }) => {
   test.skip(hasTouch, 'Hover is desktop only')
   await openConfigurator(page)

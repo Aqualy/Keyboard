@@ -1,6 +1,5 @@
-import { KEY_BY_CODE, LAYOUT } from '../data/layout'
 import { hasLongKeySamples, type SwitchId } from '../data/options'
-import { useConfig } from '../state/config'
+import { currentKey, currentLayout, useConfig } from '../state/config'
 import { useStage } from '../state/stage'
 import {
   PLATE_TONES,
@@ -11,7 +10,6 @@ import {
   type KeyEdge,
 } from './samples'
 
-const KEYBOARD_HALF_WIDTH = (LAYOUT.columns * LAYOUT.pitch) / 2
 const KNOB_PITCH = 1.7
 const KNOB_GAIN = 0.5
 
@@ -53,7 +51,8 @@ function loadSwitch(audio: AudioContext, switchId: SwitchId) {
 function play(audio: AudioContext, buffer: AudioBuffer, x: number, pitch = 1, level = 1) {
   const { plate, switch: switchId } = useConfig.getState().config
   const tone = PLATE_TONES[plate]
-  const { rate, gain, pan } = playbackVariation(x, KEYBOARD_HALF_WIDTH)
+  const layout = currentLayout()
+  const { rate, gain, pan } = playbackVariation(x, (layout.columns * layout.pitch) / 2)
 
   const source = audio.createBufferSource()
   source.buffer = buffer
@@ -87,14 +86,14 @@ async function playSample(sample: string, x: number, pitch?: number, level?: num
 }
 
 export function playKey(code: string, edge: KeyEdge) {
-  const key = KEY_BY_CODE.get(code)
+  const key = currentKey(code)
   if (!key) return
   const longKeys = hasLongKeySamples(useConfig.getState().config.switch)
   void playSample(sampleName(key, edge, longKeys), key.x)
 }
 
 export function playKnobTick() {
-  void playSample('release/GENERIC', LAYOUT.knob.x, KNOB_PITCH, KNOB_GAIN)
+  void playSample('release/GENERIC', currentLayout().knob.x, KNOB_PITCH, KNOB_GAIN)
 }
 
 /** Decodes a switch ahead of use, once sound has started, so changing it has no delay. */

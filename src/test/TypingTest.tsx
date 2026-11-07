@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { KEY_BY_CODE } from '../data/layout'
 import { announceSoftKey, KEY_TAP_EVENT } from '../scene/keyTap'
+import { currentKey } from '../state/config'
 import { useStage } from '../state/stage'
 import {
   accuracy,
@@ -19,7 +19,8 @@ const pickPhrase = (previous?: string) => {
 
 function characterForCode(code: string) {
   if (code === 'Space') return ' '
-  const legend = KEY_BY_CODE.get(code)?.legend.at(-1)
+  // The printed legend, so tapping a key types what the chosen region shows on it.
+  const legend = currentKey(code)?.legend.at(-1)
   return legend?.length === 1 ? legend.toLowerCase() : undefined
 }
 

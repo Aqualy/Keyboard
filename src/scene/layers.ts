@@ -45,6 +45,8 @@ export type Arrangement = 'assembled' | 'exploded' | { isolate: LayerId }
 
 /** The part each folder isolates. The case is the outside of the board, so it stays assembled. */
 const ISOLATED: Record<Section, LayerId | null> = {
+  // Size and standard change the whole board, so it stays together.
+  layout: null,
   case: null,
   keycaps: 'keycaps',
   switches: 'switches',

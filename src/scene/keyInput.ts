@@ -1,4 +1,4 @@
-import { KEY_BY_CODE } from '../data/layout'
+import { currentKey } from '../state/config'
 
 const CONTROL_KEYS = new Set([
   'Tab',
@@ -23,7 +23,7 @@ export function shouldPressKey(event: {
   repeat: boolean
   target: EventTarget | null
 }) {
-  if (event.repeat || !KEY_BY_CODE.has(event.code)) return false
+  if (event.repeat || !currentKey(event.code)) return false
   const element = event.target instanceof HTMLElement ? event.target : null
   if (element?.dataset.typing !== undefined) return true
   const inControl = element?.closest('input, button, select, textarea, a') != null

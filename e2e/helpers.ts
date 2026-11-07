@@ -48,6 +48,9 @@ const FOLDER_OF: Record<string, string> = {
   Type: 'Switches',
   Switch: 'Switches',
   Plate: 'Plate',
+  Size: 'Layout',
+  Standard: 'Layout',
+  Legends: 'Layout',
   Effect: 'Lighting',
   'Light colour': 'Lighting',
   Brightness: 'Lighting',
@@ -58,13 +61,15 @@ export async function openFolder(page: Page, folder: string) {
   const tab = page.locator('.folder-tab', { has: page.getByText(folder, { exact: true }) })
   await tab.click()
   await expect(tab).toHaveAttribute('aria-expanded', 'true')
-  // The open folder widens over a short transition. Wait for it, as a person would.
+  // On wide screens the open folder widens over a short transition. Wait for it, as a person
+  // would. Narrow screens have no transition, and the folder there has no box of its own.
   const panel = page.locator('.folder', { has: tab })
   let previous = await panel.boundingBox()
-  for (;;) {
+  if (!previous) return
+  for (let tries = 0; tries < 25; tries += 1) {
     await page.waitForTimeout(80)
     const next = await panel.boundingBox()
-    if (next && previous && next.x === previous.x && next.width === previous.width) return
+    if (!next || (next.x === previous.x && next.width === previous.width)) return
     previous = next
   }
 }

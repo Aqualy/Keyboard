@@ -1,6 +1,6 @@
 import { Component, lazy, Suspense, type ReactNode } from 'react'
 import { COLOURWAYS } from './data/options'
-import { matchColourway, useConfig } from './state/config'
+import { layoutOf, matchColourway, useConfig } from './state/config'
 import { isDark, useStage } from './state/stage'
 import { TypingTest } from './test/TypingTest'
 import { Folders } from './ui/Folders'
@@ -47,7 +47,7 @@ function Summary() {
   return (
     <header className="summary">
       <div>
-        <h1>GMK67</h1>
+        <h1>{layoutOf(config).name}</h1>
         <p>{colourway}</p>
       </div>
       <button type="button" className="test-button" onClick={() => setMode('test')}>

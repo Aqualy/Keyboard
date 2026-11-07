@@ -54,6 +54,21 @@ describe('parseConfig', () => {
     expect(parseConfig('rgbColour=beet').rgbColour).toBe(DEFAULT_CONFIG.rgbColour)
   })
 
+  it('starts as a 65% ANSI board with US legends', () => {
+    expect(DEFAULT_CONFIG).toMatchObject({ size: '65', standard: 'ansi', region: 'us' })
+  })
+
+  it('reads a layout and keeps its region on the right standard', () => {
+    expect(parseConfig('size=tkl&standard=iso&region=be')).toMatchObject({
+      size: 'tkl',
+      standard: 'iso',
+      region: 'be',
+    })
+    // ISO legends can't go on an ANSI board, so the region falls back.
+    expect(parseConfig('standard=ansi&region=de').region).toBe('us')
+    expect(parseConfig('standard=iso').region).toBe('uk')
+  })
+
   it('starts with the lights off', () => {
     expect(DEFAULT_CONFIG.rgb).toBe('off')
   })
@@ -109,5 +124,20 @@ describe('useConfig', () => {
     expect(window.location.search).toBe('?plate=brass')
     useConfig.getState().update({ plate: 'pc' })
     expect(window.location.search).toBe('')
+  })
+})
+
+describe('layout choices', () => {
+  beforeEach(() => useConfig.setState({ config: DEFAULT_CONFIG }))
+
+  it('switches the standard when a region from the other one is picked', () => {
+    useConfig.getState().update({ region: 'fr' })
+    expect(useConfig.getState().config).toMatchObject({ standard: 'iso', region: 'fr' })
+  })
+
+  it('falls back to the first region of a newly picked standard', () => {
+    useConfig.getState().update({ region: 'de' })
+    useConfig.getState().update({ standard: 'ansi' })
+    expect(useConfig.getState().config).toMatchObject({ standard: 'ansi', region: 'us' })
   })
 })

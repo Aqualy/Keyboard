@@ -16,7 +16,9 @@ import bpy
 from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[2]
-LAYOUT = json.loads((ROOT / "src/data/layout.gmk67.json").read_text(encoding="utf-8"))
+LAYOUTS_DIR = ROOT / "src/data/layouts"
+LAYOUT_ID = os.environ.get("GMK_LAYOUT") or "65-ansi"
+LAYOUT = json.loads((LAYOUTS_DIR / f"{LAYOUT_ID}.json").read_text(encoding="utf-8"))
 OUT = ROOT / "public/models"
 PREVIEW = ROOT / "tools/blender/preview"
 ONLY = set(filter(None, os.environ.get("GMK_ONLY", "").split(",")))
@@ -28,6 +30,9 @@ TILT = math.radians(CASE["tiltDegrees"])
 KEY_AREA_W = LAYOUT["columns"] * PITCH
 KEY_AREA_D = LAYOUT["rows"] * PITCH
 
+# Ports and feet were placed on the 65% case. Larger cases keep them the same distance from
+# their nearest edges.
+PORT_SHIFT = 16.25 - CASE["width"] / 2  # added to x: negative moves left
 SEAM_START = CASE["seamStartY"]
 SEAM_END = CASE["seamEndY"]
 UPPER_WALL = 0.34
@@ -260,8 +265,9 @@ def opening_cutter(z0, z1, name="opening"):
     """Key well, leaving a raised pad under the knob in the top right corner."""
     hw = KEY_AREA_W / 2 + 0.1
     hd = KEY_AREA_D / 2 + 0.1
-    notch_x = 7 * PITCH + LAYOUT["knob"]["wellMargin"]
-    notch_y = 1.5 * PITCH + LAYOUT["knob"]["wellMargin"]
+    # The pad is the knob's own key slot, from its left and front edges to the case's corner.
+    notch_x = LAYOUT["knob"]["x"] - PITCH / 2 + LAYOUT["knob"]["wellMargin"]
+    notch_y = LAYOUT["knob"]["y"] - PITCH / 2 + LAYOUT["knob"]["wellMargin"]
     outline = [(-hw, -hd), (hw, -hd), (hw, notch_y), (notch_x, notch_y), (notch_x, hd), (-hw, hd)]
     return prism(name, outline, z0, z1)
 
@@ -309,11 +315,13 @@ def build_lower_lid(mat):
     # Recessed port panel on the back wall, toward the keyboard's left.
     wall = rear_wall()
     bm = bmesh.new()
-    add_box(bm, -15.1, -6.2, wall - PORT_RECESS, wall + 1, -1.86, -0.72)
+    add_box(bm, -15.1 + PORT_SHIFT, -6.2 + PORT_SHIFT, wall - PORT_RECESS, wall + 1, -1.86, -0.72)
     boolean(lid, to_object("portRecess", bm))
     # A shallow pocket, so the opening never reaches the hollow inside of the case.
     bm = bmesh.new()
-    add_box(bm, -14.25, -13.15, wall - PORT_RECESS - USB_DEPTH, wall, -1.48, -1.02)
+    add_box(
+        bm, -14.25 + PORT_SHIFT, -13.15 + PORT_SHIFT, wall - PORT_RECESS - USB_DEPTH, wall, -1.48, -1.02
+    )
     boolean(lid, to_object("usbPort", bm))
 
     # No bevel here. Its small faces would smear shading across these large flat walls.
@@ -326,14 +334,15 @@ def build_lower_lid(mat):
 def build_rear_details(mat_dark, mat_case):
     panel = rear_wall() - PORT_RECESS
     bm = bmesh.new()
-    add_box(bm, -14.25, -13.15, panel - USB_DEPTH, panel - USB_DEPTH + 0.01, -1.48, -1.02)  # USB back
-    add_box(bm, -14.0, -13.4, panel - USB_DEPTH, panel - 0.05, -1.31, -1.19)  # USB-C tongue
+    o = PORT_SHIFT
+    add_box(bm, -14.25 + o, -13.15 + o, panel - USB_DEPTH, panel - USB_DEPTH + 0.01, -1.48, -1.02)  # USB back
+    add_box(bm, -14.0 + o, -13.4 + o, panel - USB_DEPTH, panel - 0.05, -1.31, -1.19)  # USB-C tongue
     dark = to_object("rearDark", bm, mat_dark)
 
     bm = bmesh.new()
-    add_box(bm, -8.85, -6.75, panel - 0.02, panel + 0.07, -1.56, -1.05)  # 2.4G receiver
-    add_box(bm, -11.0, -10.2, panel - 0.1, panel + 0.05, -1.42, -1.14)  # mode switch
-    add_box(bm, -12.5, -11.8, panel - 0.1, panel + 0.05, -1.42, -1.14)  # OS switch
+    add_box(bm, -8.85 + o, -6.75 + o, panel - 0.02, panel + 0.07, -1.56, -1.05)  # 2.4G receiver
+    add_box(bm, -11.0 + o, -10.2 + o, panel - 0.1, panel + 0.05, -1.42, -1.14)  # mode switch
+    add_box(bm, -12.5 + o, -11.8 + o, panel - 0.1, panel + 0.05, -1.42, -1.14)  # OS switch
     light = to_object("rearLight", bm, mat_case)
     soften(light, 0.03, 2)
     return [dark, light]
@@ -355,6 +364,8 @@ def build_plate(mat):
             add_box(bm, cx - 0.36, cx + 0.36, key["y"] - 0.62, key["y"] + 0.72, -1, 1)
     boolean(plate, to_object("stabCut", bm))
 
+    if not LAYOUT["indicator"]:
+        return plate
     bm = bmesh.new()
     add_box(
         bm,
@@ -423,14 +434,7 @@ def build_stabilizers(mat, mat_wire):
 
 
 def build_screws(mat):
-    points = [
-        (-12.5, 2.0),
-        (-12.5, -2.9),
-        (12.4, 2.05),
-        (12.4, -2.9),
-        (-1.0, -3.8),
-        (0.9, 2.86),
-    ]
+    points = LAYOUT["screws"]
     bm = bmesh.new()
     for x, y in points:
         add_cylinder(bm, x, y, 0.2, 0.0, 0.1, 12)
@@ -442,6 +446,8 @@ def build_screws(mat):
 
 def build_indicator(mat_body, mat_face, mat_light):
     """A slim pillar standing in the gap beside the arrow keys."""
+    if not LAYOUT["indicator"]:
+        return []
     x, y = LAYOUT["indicator"]["x"], LAYOUT["indicator"]["y"]
     hw = LAYOUT["indicator"]["width"] / 2
     hd = LAYOUT["indicator"]["depth"] / 2
@@ -477,11 +483,14 @@ def build_gaskets(mat):
     bm = bmesh.new()
     half_w = CASE["width"] / 2 - TRAY_INSET
     half_d = CASE["depth"] / 2 - TRAY_INSET
-    for i in range(5):
-        x = -13 + i * 6.5
+    count = round(CASE["width"] / 6.5)
+    spread = CASE["width"] / 2 - 3.25
+    for i in range(count):
+        x = -spread + i * 2 * spread / (count - 1)
         add_box(bm, x - 1.1, x + 1.1, half_d - 0.1, half_d, -0.82, -0.3)
         add_box(bm, x - 1.1, x + 1.1, -half_d, -half_d + 0.1, -0.82, -0.3)
-    for y in (-3, 3):
+    side = CASE["depth"] / 2 - 2.825
+    for y in (-side, side):
         add_box(bm, half_w - 0.1, half_w, y - 1, y + 1, -0.82, -0.3)
         add_box(bm, -half_w, -half_w + 0.1, y - 1, y + 1, -0.82, -0.3)
     return to_object("gasketStrips", bm, mat)
@@ -489,12 +498,14 @@ def build_gaskets(mat):
 
 def build_feet(mat):
     bm = bmesh.new()
-    for x in (-13.5, 13.5):
-        z = desk_z(4.6)
-        add_box(bm, x - 1.4, x + 1.4, 3.9, 5.3, z - 0.02, z + 0.2)
-    z = desk_z(-4.4)
-    for x in (-13.5, 13.5):
-        add_box(bm, x - 1.4, x + 1.4, -4.8, -4.0, z - 0.02, z + 0.2)
+    hw = CASE["width"] / 2 - 2.75
+    hd = CASE["depth"] / 2
+    for x in (-hw, hw):
+        z = desk_z(hd - 1.225)
+        add_box(bm, x - 1.4, x + 1.4, hd - 1.925, hd - 0.525, z - 0.02, z + 0.2)
+    z = desk_z(-hd + 1.425)
+    for x in (-hw, hw):
+        add_box(bm, x - 1.4, x + 1.4, -hd + 1.025, -hd + 1.825, z - 0.02, z + 0.2)
     return to_object("feet", bm, mat)
 
 
@@ -592,55 +603,115 @@ PROFILES = {
 }
 
 
-def build_keycap(name, width, row, homing, profile):
-    """Lofts a keycap as rings of a rounded rectangle, from skirt to dish centre."""
+def rounded_polygon(points, radii, segments=5):
+    """Rounds each corner of a right-angled polygon. Works for inner (concave) corners too."""
+    out = []
+    count = len(points)
+    for i, (vx, vy) in enumerate(points):
+        px, py = points[i - 1]
+        nx, ny = points[(i + 1) % count]
+        u1 = ((px - vx), (py - vy))
+        u2 = ((nx - vx), (ny - vy))
+        l1 = math.hypot(*u1)
+        l2 = math.hypot(*u2)
+        u1 = (u1[0] / l1, u1[1] / l1)
+        u2 = (u2[0] / l2, u2[1] / l2)
+        r = min(radii[i], 0.45 * l1, 0.45 * l2)
+        cx = vx + r * (u1[0] + u2[0])
+        cy = vy + r * (u1[1] + u2[1])
+        for k in range(segments + 1):
+            a = k / segments * math.pi / 2
+            out.append(
+                (
+                    cx - r * (math.cos(a) * u2[0] + math.sin(a) * u1[0]),
+                    cy - r * (math.cos(a) * u2[1] + math.sin(a) * u1[1]),
+                )
+            )
+    return out
+
+
+def iso_enter_outline(d, scale, radius):
+    """The L of an ISO Enter, inset by d, with the switch at the origin."""
+    u = PITCH
+    g = 0.045 + d
+    points = [
+        (-0.875 * u + g, u - g),
+        (0.625 * u - g, u - g),
+        (0.625 * u - g, -u + g),
+        (-0.625 * u + g, -u + g),
+        (-0.625 * u + g, g),
+        (-0.875 * u + g, g),
+    ]
+    centre = (-0.125 * u, 0.25 * u)
+    points = [(centre[0] + (x - centre[0]) * scale, centre[1] + (y - centre[1]) * scale) for x, y in points]
+    # The inside corner gets a small fillet; the outside ones the usual rounding.
+    radii = [radius, radius, radius, radius, min(radius, 0.06), radius]
+    return rounded_polygon(points, radii)
+
+
+def build_keycap(name, width, row, homing, profile, iso=False):
+    """Lofts a keycap as rings of its outline, from skirt to dish centre."""
     p = PROFILES[profile]
     height = p["heights"][row]
     tilt = math.tan(math.radians(p["tilts"][row]))
-    base_hw = width * PITCH / 2 - 0.045
-    base_hd = PITCH / 2 - 0.045
     inset = (1.8 - p["top"]) / 2
-    top_hw = base_hw - inset
-    top_hd = base_hd - inset
     rim = p["rim"]
+    if iso:
+        # The top's dish runs across the wide upper part.
+        centre_x = -0.125 * PITCH
+        top_hw = 0.75 * PITCH - 0.045 - inset
+        top_hd = PITCH - 0.045 - inset
+    else:
+        centre_x = 0.0
+        base_hw = width * PITCH / 2 - 0.045
+        base_hd = PITCH / 2 - 0.045
+        top_hw = base_hw - inset
+        top_hd = base_hd - inset
+
+    def outline(d, scale, radius):
+        if iso:
+            return iso_enter_outline(d, scale, radius)
+        return rounded_outline((base_hw - d) * scale, (base_hd - d) * scale, radius, 5)
 
     def surface(x, y):
+        x = x - centre_x
         nx = min(abs(x) / top_hw, 1)
         ny = min(abs(y) / top_hd, 1)
         depth = 1 - nx * nx if not p["spherical"] else 1 - min(nx * nx + ny * ny, 1)
-        if not p["spherical"] and width > 1:
+        if not p["spherical"] and (width > 1 or iso):
             depth = 1 - min(abs(x) / (top_hw + 0.2), 1) ** 6
         return height + tilt * y - p["dish"] * depth
 
     bm = bmesh.new()
     rings = []
 
-    def ring(hw, hd, radius, z_of):
-        pts = rounded_outline(hw, hd, radius, 5)
-        rings.append([bm.verts.new((x, y, z_of(x, y))) for x, y in pts])
+    def ring(d, scale, radius, z_of):
+        rings.append([bm.verts.new((x, y, z_of(x, y))) for x, y in outline(d, scale, radius)])
 
     # Inside cavity, then the bottom lip.
     wall = 0.13
     cavity_top = height * 0.62
-    ring(base_hw * 0.1, base_hd * 0.1, 0.04, lambda x, y: cavity_top)
-    ring(base_hw - wall - inset, base_hd - wall - inset, 0.1, lambda x, y: cavity_top)
-    ring(base_hw - wall, base_hd - wall, 0.1, lambda x, y: 0.0)
-    ring(base_hw, base_hd, 0.12, lambda x, y: 0.0)
+    ring(0, 0.1, 0.04, lambda x, y: cavity_top)
+    ring(wall + inset, 1, 0.1, lambda x, y: cavity_top)
+    ring(wall, 1, 0.1, lambda x, y: 0.0)
+    ring(0, 1, 0.12, lambda x, y: 0.0)
 
     # Outer wall with a gentle belly.
     steps = 6
     for i in range(1, steps + 1):
         t = i / steps
         k = t + p["wall_curve"] * math.sin(t * math.pi)
-        hw = base_hw - inset * k
-        hd = base_hd - inset * k
+        hw = (base_hw if not iso else top_hw + inset) - inset * k
         corner = 0.12 + (0.2 - 0.12) * t
 
-        def wall_z(x, y, t=t):
-            edge = surface(math.copysign(top_hw, x) * min(abs(x) / max(hw, 1e-6), 1), y)
-            return (edge - rim) * t
+        def wall_z(x, y, t=t, hw=hw):
+            if iso:
+                edge_x = min(max(x, centre_x - top_hw), centre_x + top_hw)
+            else:
+                edge_x = math.copysign(top_hw, x) * min(abs(x) / max(hw, 1e-6), 1)
+            return (surface(edge_x, y) - rim) * t
 
-        ring(hw, hd, corner, wall_z)
+        ring(inset * k, 1, corner, wall_z)
 
     # Rounded shoulder into the top surface.
     for i in range(1, 5):
@@ -651,13 +722,11 @@ def build_keycap(name, width, row, homing, profile):
         def shoulder(x, y, rise=rise):
             return surface(x, y) - rim + rise
 
-        ring(top_hw - inward, top_hd - inward, 0.2, shoulder)
+        ring(inset + inward, 1, 0.2, shoulder)
 
     # The dish, stepping in to the centre.
     for scale in (0.8, 0.55, 0.3, 0.1):
-        hw = (top_hw - rim) * scale
-        hd = (top_hd - rim) * scale
-        ring(hw, hd, max(0.2 * scale, 0.02), surface)
+        ring(inset + rim, scale, max(0.2 * scale, 0.02), surface)
 
     for a, b in zip(rings, rings[1:]):
         count = len(a)
@@ -680,20 +749,31 @@ def build_keycap(name, width, row, homing, profile):
     return obj
 
 
+def shape_name(key):
+    """Mesh name for a key's cap. Matches keycapMeshName in src/data/layout.ts."""
+    if key.get("shape") == "isoEnter":
+        return "iso_enter"
+    row = min(key["row"] + 1, 4)
+    return f"w{round(key['width'] * 100)}_r{row}{'_h' if key['homing'] else ''}"
+
+
 def keycap_shapes():
+    """Every cap shape any layout uses, so one keycap file serves every board."""
     shapes = {}
-    for key in KEYS:
-        row = min(key["row"] + 1, 4)
-        name = f"w{round(key['width'] * 100)}_r{row}{'_h' if key['homing'] else ''}"
-        shapes[name] = (key["width"], row, key["homing"])
+    for path in sorted(LAYOUTS_DIR.glob("*.json")):
+        for key in json.loads(path.read_text(encoding="utf-8"))["keys"]:
+            iso = key.get("shape") == "isoEnter"
+            # The ISO Enter spans the tab and home rows; it takes the home row's sculpt.
+            row = 3 if iso else min(key["row"] + 1, 4)
+            shapes[shape_name(key)] = (key["width"], row, key["homing"], iso)
     return shapes
 
 
 def build_keycaps(profile):
     clear_scene()
     return [
-        build_keycap(name, width, row, homing, profile)
-        for name, (width, row, homing) in keycap_shapes().items()
+        build_keycap(name, width, row, homing, profile, iso)
+        for name, (width, row, homing, iso) in keycap_shapes().items()
     ]
 
 
@@ -783,9 +863,7 @@ def instance_keycaps(profile="cherry"):
     caps = build_keycaps_into_scene(profile)
     objs = []
     for key in KEYS:
-        row = min(key["row"] + 1, 4)
-        name = f"w{round(key['width'] * 100)}_r{row}{'_h' if key['homing'] else ''}"
-        obj = bpy.data.objects.new(f"cap_{key['code']}", caps[name].data)
+        obj = bpy.data.objects.new(f"cap_{key['code']}", caps[shape_name(key)].data)
         bpy.context.scene.collection.objects.link(obj)
         obj.location = (key["x"], key["y"], LAYOUT["keycapBaseZ"])
         objs.append(obj)
@@ -797,8 +875,8 @@ def instance_keycaps(profile="cherry"):
 
 def build_keycaps_into_scene(profile):
     return {
-        name: build_keycap(f"src_{name}", width, row, homing, profile)
-        for name, (width, row, homing) in keycap_shapes().items()
+        name: build_keycap(f"src_{name}", width, row, homing, profile, iso)
+        for name, (width, row, homing, iso) in keycap_shapes().items()
     }
 
 
@@ -862,7 +940,7 @@ def bake_shadow():
     scene = bpy.context.scene
     scene.render.image_settings.file_format = "WEBP"
     scene.render.image_settings.quality = 80
-    scene.render.filepath = str(OUT / "shadow.webp")
+    scene.render.filepath = str(OUT / f"shadow-{LAYOUT_ID}.webp")
     OUT.mkdir(parents=True, exist_ok=True)
     bpy.ops.render.render(write_still=True)
 
@@ -899,7 +977,8 @@ def bake_environment():
 
 
 def preview():
-    PREVIEW.mkdir(parents=True, exist_ok=True)
+    folder = PREVIEW / LAYOUT_ID
+    folder.mkdir(parents=True, exist_ok=True)
     parts = build_keyboard()
     caps = instance_keycaps()
     for obj in parts:
@@ -924,7 +1003,7 @@ def preview():
         cam.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
         for cap in caps:
             cap.hide_render = hide_caps
-        bpy.context.scene.render.filepath = str(PREVIEW / f"{name}.png")
+        bpy.context.scene.render.filepath = str(folder / f"{name}.png")
         bpy.ops.render.render(write_still=True)
 
     shoot("front", (0, -95, 62))
@@ -951,7 +1030,7 @@ def preview():
 
 
 TASKS = {
-    "keyboard": lambda: (build_keyboard(), export_glb("gmk67")),
+    "keyboard": lambda: (build_keyboard(), export_glb(LAYOUT_ID)),
     "switch": lambda: (build_switch(), export_glb("switch")),
     "keycaps": lambda: [(build_keycaps(p), export_glb(f"keycaps-{p}")) for p in PROFILES],
     "environment": bake_environment,

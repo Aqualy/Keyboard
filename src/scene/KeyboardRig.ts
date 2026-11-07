@@ -13,7 +13,7 @@ import {
   type Texture,
 } from 'three'
 import type { GLTF } from 'three/addons/loaders/GLTFLoader.js'
-import { KEYS, keycapMeshName, LAYOUT, type KeyDefinition } from '../data/layout'
+import { keycapMeshName, type KeyDefinition, type Layout } from '../data/layout'
 import { motion } from '../motion'
 import type { ProfileId } from '../data/options'
 import { LAYERS, liftsFor, staggerOrder, type Arrangement, type LayerId } from './layers'
@@ -29,13 +29,10 @@ import {
   uniforms,
 } from './materials'
 
-export const TILT = (LAYOUT.case.tiltDegrees * Math.PI) / 180
-const DESK_OFFSET =
-  (-LAYOUT.case.frontBottomZ + (LAYOUT.case.depth / 2) * Math.tan(TILT)) * Math.cos(TILT)
 /** Lifts the case off the desk, as its rubber feet do. */
 const FOOT_HEIGHT = 0.02
-/** Height of the keycap base above the plate. */
-const CAP_HEIGHT = LAYOUT.keycapBaseZ
+/** Parts only some boards have. */
+const OPTIONAL_PARTS = new Set(['ledIndicator', 'ledIndicatorFace', 'ledIndicatorLights'])
 const PRESS_SECONDS = 0.07
 /** Delay between neighbouring layers when the board spreads or assembles. */
 const STAGGER_SECONDS = 0.03
@@ -58,6 +55,7 @@ interface KeyState {
 }
 
 export interface RigAssets {
+  layout: Layout
   keyboard: GLTF
   keycaps: Record<ProfileId, GLTF>
   switchModel: GLTF
@@ -108,14 +106,23 @@ export class KeyboardRig {
   private readonly keys = new Map<string, KeyState>()
   private activeProfile: ProfileId = 'cherry'
   private lifts = liftsFor('assembled')
+  private readonly tilt: number
+  private readonly layout: Layout
 
   constructor(assets: RigAssets) {
-    const { keyboard, keycaps, switchModel, shadow, legends } = assets
+    const { layout, keyboard, keycaps, switchModel, shadow, legends } = assets
+    this.layout = layout
     // Parts move into layers below, so work on a copy of the loader's cached scene.
     const nodes = keyboard.scene.clone()
 
-    this.tilted.position.y = DESK_OFFSET + FOOT_HEIGHT
-    this.tilted.rotation.x = TILT
+    const shape = layout.case
+    this.tilt = (shape.tiltDegrees * Math.PI) / 180
+    // Raises the tilted plate frame so the case's underside rests on the desk.
+    const deskOffset =
+      (-shape.frontBottomZ + (shape.depth / 2) * Math.tan(this.tilt)) * Math.cos(this.tilt)
+    this.tilted.position.y = deskOffset + FOOT_HEIGHT
+    this.tilted.rotation.x = this.tilt
+    uniforms.keyArea.value.set(layout.columns * layout.pitch, layout.rows * layout.pitch)
     this.root.add(this.tilted)
 
     const caseMaterial = createCaseMaterial()
@@ -123,7 +130,7 @@ export class KeyboardRig {
     const knobMaterial = createKnobMaterial()
     const overrides: Record<string, Material> = {
       upperLid: caseMaterial,
-      lowerLid: createLowerLidMaterial(),
+      lowerLid: createLowerLidMaterial(shape),
       rearLight: caseMaterial,
       ledIndicator: caseMaterial,
       plate: plateMaterial,
@@ -149,7 +156,10 @@ export class KeyboardRig {
       ;(flexing.has(layer.id) ? this.flex : this.tilted).add(group)
       for (const part of layer.parts) {
         const mesh = nodes.getObjectByName(part)
-        if (!mesh) throw new Error(`Model is missing part: ${part}`)
+        if (!mesh) {
+          if (OPTIONAL_PARTS.has(part)) continue
+          throw new Error(`Model is missing part: ${part}`)
+        }
         const material = overrides[part]
         if (material) {
           // A part with several material slots loads as a group of meshes.
@@ -181,12 +191,20 @@ export class KeyboardRig {
     const housingGeometry = housingNode.geometry.clone()
     housingGeometry.setAttribute(
       'aKey',
-      new InstancedBufferAttribute(new Float32Array(KEYS.flatMap((key) => [key.x, -key.y])), 2),
+      new InstancedBufferAttribute(
+        new Float32Array(this.layout.keys.flatMap((key) => [key.x, -key.y])),
+        2,
+      ),
     )
     const base = (housingNode.material as MeshStandardMaterial).color
-    const housings = instanced(housingGeometry, createHousingMaterial(base), KEYS, 'housings')
-    const stems = instanced(stemNode.geometry, createStemMaterial(), KEYS, 'stems')
-    KEYS.forEach((key, index) => {
+    const housings = instanced(
+      housingGeometry,
+      createHousingMaterial(base),
+      this.layout.keys,
+      'housings',
+    )
+    const stems = instanced(stemNode.geometry, createStemMaterial(), this.layout.keys, 'stems')
+    this.layout.keys.forEach((key, index) => {
       place({ mesh: housings, index, baseY: 0 }, key, 0)
       place({ mesh: stems, index, baseY: 0 }, key, 0)
     })
@@ -207,7 +225,7 @@ export class KeyboardRig {
       set.name = `keycaps-${profile}`
       this.capSets.set(profile, set)
 
-      for (const [meshName, keys] of groupByShape(KEYS)) {
+      for (const [meshName, keys] of groupByShape(this.layout.keys)) {
         const node = keycaps[profile].scene.getObjectByName(meshName) as Mesh | undefined
         if (!node) throw new Error(`Keycaps are missing shape: ${meshName}`)
 
@@ -219,7 +237,7 @@ export class KeyboardRig {
 
         const mesh = instanced(geometry, material, keys, meshName)
         keys.forEach((key, index) => {
-          const slot = { mesh, index, baseY: CAP_HEIGHT }
+          const slot = { mesh, index, baseY: this.layout.keycapBaseZ }
           place(slot, key, 0)
           slots.set(key.code, { ...slots.get(key.code), [profile]: slot })
         })
@@ -227,7 +245,7 @@ export class KeyboardRig {
       }
     }
 
-    KEYS.forEach((key, index) => {
+    this.layout.keys.forEach((key, index) => {
       this.keys.set(key.code, {
         key,
         press: 0,
@@ -277,7 +295,7 @@ export class KeyboardRig {
         overwrite: true,
       })
     })
-    gsap.to(this.tilted.rotation, { x: spread ? 0 : TILT, duration, ease, overwrite: true })
+    gsap.to(this.tilted.rotation, { x: spread ? 0 : this.tilt, duration, ease, overwrite: true })
     gsap.to(uniforms.shadow, { value: spread ? 0.45 : 1, duration, overwrite: true })
   }
 

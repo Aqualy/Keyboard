@@ -1,4 +1,5 @@
-import { KEYS } from '../data/layout'
+import { withLegends } from '../data/layout'
+import { layoutOf, useConfig } from '../state/config'
 
 export const PHRASES = [
   'the quick brown fox jumps over the lazy dog near the quiet river bank',
@@ -69,14 +70,15 @@ export function accuracy(state: TypingState) {
   return Math.round(((state.keystrokes - state.mistakes) / state.keystrokes) * 100)
 }
 
-const CHARACTER_TO_CODE = new Map<string, string>()
-for (const key of KEYS) {
-  for (const legend of key.legend) {
-    if (legend.length === 1) CHARACTER_TO_CODE.set(legend.toLowerCase(), key.code)
-  }
-}
-CHARACTER_TO_CODE.set(' ', 'Space')
-
 /** Touch keyboards don't report physical keys, so characters map back to 3D keys. */
-export const codeForCharacter = (character: string) =>
-  CHARACTER_TO_CODE.get(character.toLowerCase())
+export function codeForCharacter(character: string) {
+  if (character === ' ') return 'Space'
+  const { config } = useConfig.getState()
+  const wanted = character.toLowerCase()
+  for (const key of withLegends(layoutOf(config), config.region)) {
+    if (key.legend.some((legend) => legend.length === 1 && legend.toLowerCase() === wanted)) {
+      return key.code
+    }
+  }
+  return undefined
+}

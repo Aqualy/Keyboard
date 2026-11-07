@@ -2,7 +2,7 @@
 import { existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { KEY_BY_CODE, KEYS } from '../data/layout'
+import { keyByCode, LAYOUTS, layoutFor } from '../data/layout'
 import { hasLongKeySamples, PLATES, SWITCHES } from '../data/options'
 import {
   PLATE_TONES,
@@ -16,7 +16,7 @@ import {
   TARGET_LUFS,
 } from './samples'
 
-const key = (code: string) => KEY_BY_CODE.get(code)!
+const key = (code: string) => keyByCode(layoutFor('65', 'ansi')).get(code)!
 
 describe('sampleName', () => {
   it.each([
@@ -51,7 +51,7 @@ describe('sampleName', () => {
       ...PRESS_SAMPLES.map((name) => `press/${name}`),
       ...RELEASE_SAMPLES.map((name) => `release/${name}`),
     ]
-    for (const candidate of KEYS) {
+    for (const candidate of LAYOUTS.flatMap((layout) => layout.keys)) {
       expect(known).toContain(sampleName(candidate, 'press'))
       expect(known).toContain(sampleName(candidate, 'release'))
     }

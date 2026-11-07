@@ -106,7 +106,7 @@ test('an isolated part survives the exploded view and the typing test', async ({
   await waitForStillCanvas(page)
   await page.getByRole('button', { name: 'Test' }).click()
   await page.keyboard.press('Escape')
-  await expect(page.getByRole('button', { name: /^Switches / })).toHaveAttribute(
+  await expect(page.locator('.folder-tab', { hasText: 'Switches' })).toHaveAttribute(
     'aria-expanded',
     'true',
   )

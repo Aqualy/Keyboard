@@ -795,8 +795,8 @@ def bake_environment():
     pixels = [0.0] * (width * height * 4)
     for y in range(height):
         v = y / (height - 1)
-        ground = 0.34 + 0.2 * v
-        sky = 0.62 + 0.34 * v
+        ground = 0.66 + 0.16 * v
+        sky = 0.8 + 0.2 * v
         blend = min(max((v - 0.44) / 0.12, 0), 1)
         for x in range(width):
             u = x / (width - 1)

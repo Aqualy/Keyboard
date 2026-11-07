@@ -5,7 +5,14 @@
   "rules": {
     "react/rules-of-hooks": "error",
     "react/exhaustive-deps": "warn",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }],
-    "typescript/no-explicit-any": "error"
+    "react/only-export-components": [
+      "warn",
+      {
+        "allowConstantExport": true
+      }
+    ],
+    "typescript/no-explicit-any": "error",
+    "vitest/require-mock-type-parameters": "off",
+    "react/immutability": "off"
   }
 }

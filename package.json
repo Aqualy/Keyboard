@@ -13,7 +13,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test --pass-with-no-tests",
+    "e2e": "playwright test",
     "model": "node tools/blender/run.mjs"
   },
   "dependencies": {

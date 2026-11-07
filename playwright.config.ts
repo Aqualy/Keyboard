@@ -1,10 +1,16 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const gpuArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
+// CI machines have no GPU, so they fall back to a slower software renderer.
+const gpuArgs = process.env.CI
+  ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
+  : ['--use-angle=d3d11', '--enable-unsafe-webgpu', '--ignore-gpu-blocklist']
+
+// Software rendering can't settle a full 1440x900 canvas in time. This size keeps the desktop layout.
+const desktopViewport = process.env.CI ? { width: 1100, height: 700 } : { width: 1440, height: 900 }
 
 export default defineConfig({
   testDir: 'e2e',
-  timeout: 90_000,
+  timeout: process.env.CI ? 180_000 : 60_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,
   workers: 1,
@@ -12,6 +18,7 @@ export default defineConfig({
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     baseURL: 'http://127.0.0.1:4173',
+    channel: 'chromium',
     launchOptions: { args: gpuArgs },
     trace: 'retain-on-failure',
   },
@@ -23,7 +30,7 @@ export default defineConfig({
   projects: [
     {
       name: 'desktop',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+      use: { ...devices['Desktop Chrome'], viewport: desktopViewport },
     },
     {
       name: 'tablet',

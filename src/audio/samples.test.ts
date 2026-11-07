@@ -11,6 +11,9 @@ import {
   RELEASE_SAMPLES,
   samplePaths,
   sampleName,
+  SWITCH_LOUDNESS,
+  switchGain,
+  TARGET_LUFS,
 } from './samples'
 
 const key = (code: string) => KEY_BY_CODE.get(code)!
@@ -96,4 +99,25 @@ describe('playbackVariation', () => {
     expect(playbackVariation(0, 15).pan).toBeCloseTo(0)
     expect(playbackVariation(99, 15).pan).toBeCloseTo(0.45)
   })
+})
+
+describe('switchGain', () => {
+  const decibels = (gain: number) => 20 * Math.log10(gain)
+  const loudestPlate = Math.max(...Object.values(PLATE_TONES).map((tone) => tone.gain))
+
+  it('has a measurement for every switch', () => {
+    expect(Object.keys(SWITCH_LOUDNESS).sort()).toEqual(SWITCHES.map((option) => option.id).sort())
+  })
+
+  it.each(SWITCHES.map((option) => option.id))('brings %s to the shared loudness', (id) => {
+    expect(SWITCH_LOUDNESS[id].lufs + decibels(switchGain(id))).toBeCloseTo(TARGET_LUFS, 6)
+  })
+
+  it.each(SWITCHES.map((option) => option.id))(
+    'keeps %s 1 dB under clipping on the loudest plate',
+    (id) => {
+      const peak = SWITCH_LOUDNESS[id].peak + decibels(switchGain(id) * loudestPlate)
+      expect(peak).toBeLessThanOrEqual(-1)
+    },
+  )
 })

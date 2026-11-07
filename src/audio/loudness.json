@@ -1,0 +1,54 @@
+{
+  "alpaca": {
+    "lufs": -40.1,
+    "peak": -12.3
+  },
+  "blackink": {
+    "lufs": -34,
+    "peak": -9.1
+  },
+  "bluealps": {
+    "lufs": -29.9,
+    "peak": -7.5
+  },
+  "boxnavy": {
+    "lufs": -41.6,
+    "peak": -9.6
+  },
+  "buckling": {
+    "lufs": -36.1,
+    "peak": -16.5
+  },
+  "cream": {
+    "lufs": -38,
+    "peak": -5.3
+  },
+  "holypanda": {
+    "lufs": -31.4,
+    "peak": -9.6
+  },
+  "mxblack": {
+    "lufs": -28.9,
+    "peak": -5.2
+  },
+  "mxblue": {
+    "lufs": -27.9,
+    "peak": -7
+  },
+  "mxbrown": {
+    "lufs": -32.4,
+    "peak": -10.4
+  },
+  "redink": {
+    "lufs": -32.6,
+    "peak": -7.6
+  },
+  "topre": {
+    "lufs": -46.2,
+    "peak": -10.6
+  },
+  "turquoise": {
+    "lufs": -34.4,
+    "peak": -11
+  }
+}

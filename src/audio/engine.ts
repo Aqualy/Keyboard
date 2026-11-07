@@ -2,7 +2,14 @@ import { KEY_BY_CODE, LAYOUT } from '../data/layout'
 import { hasLongKeySamples, type SwitchId } from '../data/options'
 import { useConfig } from '../state/config'
 import { useStage } from '../state/stage'
-import { PLATE_TONES, playbackVariation, samplePaths, sampleName, type KeyEdge } from './samples'
+import {
+  PLATE_TONES,
+  playbackVariation,
+  samplePaths,
+  sampleName,
+  switchGain,
+  type KeyEdge,
+} from './samples'
 
 const KEYBOARD_HALF_WIDTH = (LAYOUT.columns * LAYOUT.pitch) / 2
 const KNOB_PITCH = 1.7
@@ -44,7 +51,8 @@ function loadSwitch(audio: AudioContext, switchId: SwitchId) {
 }
 
 function play(audio: AudioContext, buffer: AudioBuffer, x: number, pitch = 1, level = 1) {
-  const tone = PLATE_TONES[useConfig.getState().config.plate]
+  const { plate, switch: switchId } = useConfig.getState().config
+  const tone = PLATE_TONES[plate]
   const { rate, gain, pan } = playbackVariation(x, KEYBOARD_HALF_WIDTH)
 
   const source = audio.createBufferSource()
@@ -56,7 +64,7 @@ function play(audio: AudioContext, buffer: AudioBuffer, x: number, pitch = 1, le
   filter.frequency.value = tone.cutoff
 
   const volume = audio.createGain()
-  volume.gain.value = gain * tone.gain * level
+  volume.gain.value = gain * tone.gain * switchGain(switchId) * level
 
   const panner = audio.createStereoPanner()
   panner.pan.value = pan

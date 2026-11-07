@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { KeyHeat } from '../test/typing'
 
 export type StageMode = 'configure' | 'exploded' | 'test'
 
@@ -24,6 +25,9 @@ interface StageStore {
   hoveredPart: PartHover | null
   /** The camera stands down while the knob is being turned. */
   knobActive: boolean
+  /** A finished typing run, shown on the board as a heatmap. */
+  heatmap: Record<string, KeyHeat> | null
+  setHeatmap: (heatmap: Record<string, KeyHeat> | null) => void
   setKnobActive: (knobActive: boolean) => void
   setMode: (mode: StageMode) => void
   setSection: (section: Section) => void
@@ -43,8 +47,10 @@ export const useStage = create<StageStore>((set) => ({
   resetRequest: 0,
   hoveredPart: null,
   knobActive: false,
+  heatmap: null,
+  setHeatmap: (heatmap) => set({ heatmap }),
   setKnobActive: (knobActive) => set({ knobActive }),
-  setMode: (mode) => set({ mode, hoveredPart: null }),
+  setMode: (mode) => set({ mode, hoveredPart: null, heatmap: null }),
   setSection: (section) => set({ section }),
   setReady: () => set({ ready: true }),
   toggleSound: () => set((state) => ({ soundOn: !state.soundOn })),

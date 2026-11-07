@@ -16,6 +16,7 @@ import type { GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import { keycapMeshName, type KeyDefinition, type Layout } from '../data/layout'
 import { motion } from '../motion'
 import type { ProfileId } from '../data/options'
+import type { KeyHeat } from '../test/typing'
 import { LAYERS, liftsFor, staggerOrder, type Arrangement, type LayerId } from './layers'
 import {
   createCaseMaterial,
@@ -235,6 +236,10 @@ export class KeyboardRig {
         const centres = new Float32Array(keys.flatMap((key) => [key.x, -key.y]))
         geometry.setAttribute('aZone', new InstancedBufferAttribute(zones, 3))
         geometry.setAttribute('aKey', new InstancedBufferAttribute(centres, 2))
+        geometry.setAttribute(
+          'aHeat',
+          new InstancedBufferAttribute(new Float32Array(keys.length * 2), 2),
+        )
 
         const mesh = instanced(geometry, material, keys, meshName)
         keys.forEach((key, index) => {
@@ -305,6 +310,27 @@ export class KeyboardRig {
     const duration = motion(1.5)
     gsap.fromTo(this.root.position, { y: 1.4 }, { y: 0, duration, ease: 'power3.out' })
     gsap.fromTo(uniforms.shadow, { value: 0 }, { value: 1, duration, ease: 'power2.out' })
+  }
+
+  /** Shows a typing run on the keys, or fades it away when there is none. */
+  showHeat(heat: Record<string, KeyHeat> | null) {
+    if (heat) {
+      const most = Math.max(1, ...Object.values(heat).map((entry) => entry.presses))
+      for (const state of this.keys.values()) {
+        const entry = heat[state.key.code]
+        for (const slot of Object.values(state.caps)) {
+          const attribute = slot.mesh.geometry.getAttribute('aHeat') as InstancedBufferAttribute
+          attribute.setXY(slot.index, (entry?.presses ?? 0) / most, entry?.misses ? 1 : 0)
+          attribute.needsUpdate = true
+        }
+      }
+    }
+    gsap.to(uniforms.heatmap, {
+      value: heat ? 1 : 0,
+      duration: motion(heat ? 0.9 : 0.4),
+      ease: 'power2.out',
+      overwrite: true,
+    })
   }
 
   rotateKnob(radians: number) {

@@ -16,6 +16,8 @@ export interface TypingState {
   /** Every character entered, including ones later corrected. */
   keystrokes: number
   mistakes: number
+  /** Each character typed, with the one the phrase wanted there. */
+  strokes: { typed: string; expected: string }[]
   startedAt: number | null
   finishedAt: number | null
 }
@@ -25,6 +27,7 @@ export const startTyping = (target: string): TypingState => ({
   typed: '',
   keystrokes: 0,
   mistakes: 0,
+  strokes: [],
   startedAt: null,
   finishedAt: null,
 })
@@ -32,12 +35,14 @@ export const startTyping = (target: string): TypingState => ({
 export function typeCharacter(state: TypingState, character: string, now: number): TypingState {
   if (state.finishedAt !== null || state.typed.length >= state.target.length) return state
   const typed = state.typed + character
-  const correct = state.target[state.typed.length] === character
+  const expected = state.target[state.typed.length]
+  const correct = expected === character
   return {
     ...state,
     typed,
     keystrokes: state.keystrokes + 1,
     mistakes: state.mistakes + (correct ? 0 : 1),
+    strokes: [...state.strokes, { typed: character, expected }],
     startedAt: state.startedAt ?? now,
     finishedAt: typed.length === state.target.length ? now : null,
   }
@@ -81,4 +86,28 @@ export function codeForCharacter(character: string) {
     }
   }
   return undefined
+}
+
+export interface KeyHeat {
+  presses: number
+  misses: number
+}
+
+/**
+ * How often each key was pressed in a run, and how often it was the key that should have been
+ * pressed when a wrong one was. Keyed by physical key code.
+ */
+export function keyHeat(state: TypingState): Record<string, KeyHeat> {
+  const heat: Record<string, KeyHeat> = {}
+  const add = (character: string, field: keyof KeyHeat) => {
+    const code = codeForCharacter(character)
+    if (!code) return
+    heat[code] ??= { presses: 0, misses: 0 }
+    heat[code][field] += 1
+  }
+  for (const stroke of state.strokes) {
+    add(stroke.typed, 'presses')
+    if (stroke.typed !== stroke.expected) add(stroke.expected, 'misses')
+  }
+  return heat
 }

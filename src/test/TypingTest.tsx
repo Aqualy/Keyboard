@@ -5,6 +5,7 @@ import { useStage } from '../state/stage'
 import {
   accuracy,
   eraseCharacter,
+  keyHeat,
   PHRASES,
   startTyping,
   typeCharacter,
@@ -57,6 +58,11 @@ export function TypingTest() {
 
   const focusInput = () => inputRef.current?.focus()
   useEffect(focusInput, [finished])
+
+  // A finished run lights up on the board, so the result shows where the fingers went.
+  useEffect(() => {
+    useStage.getState().setHeatmap(finished ? keyHeat(run) : null)
+  }, [finished, run])
 
   const exit = () => setMode('configure')
   const retry = () => setRun(startTyping(pickPhrase(run.target)))
@@ -130,6 +136,12 @@ export function TypingTest() {
               <dd>{accuracy(run)}%</dd>
             </div>
           </dl>
+          <p className="heat-key">
+            <span className="heat-dot" data-heat="pressed" aria-hidden="true" />
+            Pressed, deeper for more
+            <span className="heat-dot" data-heat="missed" aria-hidden="true" />
+            Missed
+          </p>
           <div className="result-actions">
             <button type="button" className="secondary" onClick={exit}>
               Back to configurator

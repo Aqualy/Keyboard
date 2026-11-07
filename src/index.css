@@ -537,6 +537,30 @@ button {
   letter-spacing: -0.02em;
 }
 
+.heat-key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 0;
+  font: 500 11px/1.5 var(--mono);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.heat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--blue);
+}
+
+.heat-dot[data-heat='missed'] {
+  margin-left: 8px;
+  background: var(--miss);
+}
+
 .result-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -654,6 +678,11 @@ button {
 
   .folders {
     --folder-height: 340px;
+  }
+
+  /* The tools sit in a row along the top, so the test starts below them. */
+  .typing {
+    padding-top: 64px;
   }
 }
 

@@ -1,5 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
-import { openConfigurator, trackErrors } from './helpers'
+import {
+  canvasImage,
+  openConfigurator,
+  sameImage,
+  trackErrors,
+  waitForStillCanvas,
+} from './helpers'
 
 const startTest = async (page: Page) => {
   await page.getByRole('button', { name: 'Test' }).click()
@@ -17,6 +23,17 @@ test('runs a full test and shows results', async ({ page }) => {
   await expect(page.getByText('Accuracy')).toBeVisible()
   await expect(page.locator('.result-stats dd').nth(1)).toHaveText('100%')
   expect(errors).toEqual([])
+})
+
+test('a finished run shows where you typed on the board', async ({ page }) => {
+  await openConfigurator(page)
+  await startTest(page)
+  await waitForStillCanvas(page)
+  const before = await canvasImage(page)
+  await page.keyboard.type(await phraseText(page), { delay: 8 })
+  await expect(page.getByText('Missed')).toBeVisible()
+  await waitForStillCanvas(page)
+  expect(sameImage(await canvasImage(page), before)).toBe(false)
 })
 
 test('counts mistakes and lets you correct them', async ({ page }) => {

@@ -54,7 +54,13 @@ export const uniforms = {
   keyArea: uniform(new Vector2(1, 1)),
   /** Seconds on the clock key presses are stamped with, for the reactive effect. */
   ledClock: uniform(0),
+  /** 0 to 1 while a typing run's heatmap shows on the keys. */
+  heatmap: uniform(0),
 }
+
+/** Heatmap colours: the interface's blue for keys pressed, its red for keys missed. */
+const HEAT_PRESSED = new Color('#0a3dff')
+const HEAT_MISSED = new Color('#d0232b')
 
 /** How many recent presses the reactive effect remembers. Older ones have long faded. */
 const PRESS_SLOTS = 8
@@ -150,6 +156,28 @@ const ledColour = (xz: Vec2Node) => {
 const glow = (xz: Vec2Node, strength: number | FloatNode) =>
   ledColour(xz).mul(uniforms.rgbIntensity).mul(strength)
 
+/** A key's heat: x is how often it was pressed (0 to 1), y is 1 if it was missed. */
+const heatWeight = () => {
+  const heat = attribute('aHeat', 'vec2')
+  const weight = select(
+    heat.y.greaterThan(0),
+    float(1),
+    heat.x.mul(0.8).add(0.2).mul(heat.x.sign()),
+  )
+  return weight.mul(uniforms.heatmap)
+}
+
+const heatColour = () => {
+  const heat = attribute('aHeat', 'vec2')
+  return select(
+    heat.y.greaterThan(0),
+    vec3(HEAT_MISSED.r, HEAT_MISSED.g, HEAT_MISSED.b),
+    vec3(HEAT_PRESSED.r, HEAT_PRESSED.g, HEAT_PRESSED.b),
+  )
+}
+
+const heated = (base: Node<'vec3'>) => mix(base, heatColour(), heatWeight().mul(0.7))
+
 export function createKeycapMaterial(legends: CanvasTexture) {
   const material = new MeshStandardNodeMaterial({ roughness: 0.56, metalness: 0 })
 
@@ -170,14 +198,16 @@ export function createKeycapMaterial(legends: CanvasTexture) {
     const occlusion = float(1)
       .sub(clamp(positionGeometry.y.div(0.7), 0, 1))
       .mul(0.2)
-    return mix(printed, vec3(0), occlusion)
+    return mix(heated(printed), vec3(0), occlusion)
   })()
 
   // Light escapes under the skirt, so only the bottom of each cap glows and keytops stay clean.
   material.emissiveNode = Fn(() => {
     const key = attribute('aKey', 'vec2')
     const skirt = float(1).sub(smoothstep(0, 0.32, positionGeometry.y))
-    return glow(key.add(positionGeometry.xz), skirt.mul(0.9))
+    return glow(key.add(positionGeometry.xz), skirt.mul(0.9)).add(
+      heatColour().mul(heatWeight()).mul(0.45),
+    )
   })()
 
   return material

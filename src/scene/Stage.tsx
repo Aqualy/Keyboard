@@ -87,12 +87,14 @@ function Keyboard({ layout }: { layout: Layout }) {
   }, [environment, scene, rig])
 
   useEffect(() => {
-    const { mode, section } = useStage.getState()
+    const { mode, section, heatmap } = useStage.getState()
     rig.arrange(arrangementFor(mode, section))
+    rig.showHeat(heatmap)
     return useStage.subscribe((state, previous) => {
       if (state.mode !== previous.mode || state.section !== previous.section) {
         rig.arrange(arrangementFor(state.mode, state.section))
       }
+      if (state.heatmap !== previous.heatmap) rig.showHeat(state.heatmap)
     })
   }, [rig])
 

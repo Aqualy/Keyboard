@@ -4,6 +4,7 @@ import {
   codeForCharacter,
   correctCharacters,
   eraseCharacter,
+  keyHeat,
   PHRASES,
   startTyping,
   typeCharacter,
@@ -95,5 +96,16 @@ describe('codeForCharacter', () => {
     for (const phrase of PHRASES) {
       for (const character of phrase) expect(codeForCharacter(character)).toBeDefined()
     }
+  })
+
+  it('counts presses per key, and marks the key that was missed', () => {
+    const heat = keyHeat(typeAll(startTyping('aab c'), 'aax c'))
+    expect(heat).toEqual({
+      KeyA: { presses: 2, misses: 0 },
+      KeyX: { presses: 1, misses: 0 },
+      KeyB: { presses: 0, misses: 1 },
+      Space: { presses: 1, misses: 0 },
+      KeyC: { presses: 1, misses: 0 },
+    })
   })
 })

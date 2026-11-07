@@ -71,3 +71,11 @@ export function liftsFor(arrangement: Arrangement): Map<LayerId, number> {
     }),
   )
 }
+
+/**
+ * When a layer starts moving, counted in stagger steps. Layers leave top first and land bottom
+ * first, so a layer never passes through the one below it.
+ */
+export function staggerOrder(index: number, from: number, to: number) {
+  return to < from ? LAYERS.length - 1 - index : index
+}

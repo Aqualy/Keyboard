@@ -15,7 +15,7 @@ import type { GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import { KEYS, keycapMeshName, LAYOUT, type KeyDefinition } from '../data/layout'
 import { motion } from '../motion'
 import type { ProfileId } from '../data/options'
-import { LAYERS, liftsFor, type Arrangement, type LayerId } from './layers'
+import { LAYERS, liftsFor, staggerOrder, type Arrangement, type LayerId } from './layers'
 import {
   createCaseMaterial,
   createKeycapMaterial,
@@ -35,6 +35,8 @@ const FOOT_HEIGHT = 0.02
 /** Height of the keycap base above the plate. */
 const CAP_HEIGHT = LAYOUT.keycapBaseZ
 const PRESS_SECONDS = 0.07
+/** Delay between neighbouring layers when the board spreads or assembles. */
+const STAGGER_SECONDS = 0.03
 const FLEX_SECONDS = 0.4
 const FLEX_DEPTH = 0.06
 
@@ -256,11 +258,14 @@ export class KeyboardRig {
     const duration = motion(spread ? 1.1 : 0.9)
     const ease = 'power3.inOut'
     LAYERS.forEach((layer, index) => {
-      gsap.to(this.layers.get(layer.id)!.position, {
-        y: this.lifts.get(layer.id)!,
+      const position = this.layers.get(layer.id)!.position
+      const target = this.lifts.get(layer.id)!
+      const order = staggerOrder(index, position.y, target)
+      gsap.to(position, {
+        y: target,
         duration,
         ease,
-        delay: motion(index * 0.03),
+        delay: motion(order * STAGGER_SECONDS),
         overwrite: true,
       })
     })

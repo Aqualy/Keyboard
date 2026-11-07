@@ -31,9 +31,10 @@ KEY_AREA_D = LAYOUT["rows"] * PITCH
 SEAM_START = CASE["seamStartY"]
 SEAM_END = CASE["seamEndY"]
 UPPER_WALL = 0.34
-LOWER_STEP = 0.1
+LOWER_STEP = 0.03
 TRAY_INSET = 0.5
-PORT_RECESS = 0.16
+PORT_RECESS = 0.14
+USB_DEPTH = 0.2
 
 
 # Scene helpers ---------------------------------------------------------------
@@ -278,7 +279,8 @@ def build_lower_lid(mat):
     # The visible wedge, sitting just inside the upper lid behind the seam.
     lid = prism("lowerLid", case_outline(10, LOWER_STEP), -6, 2, mat)
     samples = [SEAM_START + (half - SEAM_START) * i / 40 for i in range(41)]
-    top = [(y, seam_z(y)) for y in samples]
+    # Overlaps the upper lid slightly, so no crack shows along the seam.
+    top = [(y, seam_z(y) + 0.02) for y in samples]
     bottom = [(y, desk_z(y)) for y in reversed(samples)]
     boolean(lid, extruded_profile("wedge", bottom + top), "INTERSECT")
 
@@ -296,12 +298,10 @@ def build_lower_lid(mat):
     bm = bmesh.new()
     add_box(bm, -15.1, -6.2, wall - PORT_RECESS, wall + 1, -1.86, -0.72)
     boolean(lid, to_object("portRecess", bm))
+    # A shallow pocket, so the opening never reaches the hollow inside of the case.
     bm = bmesh.new()
-    add_box(bm, -14.25, -13.15, wall - 1.2, wall, -1.48, -1.02)
+    add_box(bm, -14.25, -13.15, wall - PORT_RECESS - USB_DEPTH, wall, -1.48, -1.02)
     boolean(lid, to_object("usbPort", bm))
-    bm = bmesh.new()
-    add_box(bm, -9.0, -6.6, wall - 0.6, wall, -1.66, -0.95)
-    boolean(lid, to_object("receiverSlot", bm))
 
     # No bevel here. Its small faces would smear shading across these large flat walls.
     merge_flat_faces(lid)
@@ -312,11 +312,12 @@ def build_lower_lid(mat):
 def build_rear_details(mat_dark, mat_case):
     panel = rear_wall() - PORT_RECESS
     bm = bmesh.new()
-    add_box(bm, -14.05, -13.35, panel - 0.5, panel - 0.2, -1.32, -1.17)  # USB-C tongue
+    add_box(bm, -14.25, -13.15, panel - USB_DEPTH, panel - USB_DEPTH + 0.01, -1.48, -1.02)  # USB back
+    add_box(bm, -14.0, -13.4, panel - USB_DEPTH, panel - 0.05, -1.31, -1.19)  # USB-C tongue
     dark = to_object("rearDark", bm, mat_dark)
 
     bm = bmesh.new()
-    add_box(bm, -8.85, -6.75, panel - 0.3, panel + 0.07, -1.56, -1.05)  # 2.4G receiver
+    add_box(bm, -8.85, -6.75, panel - 0.02, panel + 0.07, -1.56, -1.05)  # 2.4G receiver
     add_box(bm, -11.0, -10.2, panel - 0.1, panel + 0.05, -1.42, -1.14)  # mode switch
     add_box(bm, -12.5, -11.8, panel - 0.1, panel + 0.05, -1.42, -1.14)  # OS switch
     light = to_object("rearLight", bm, mat_case)

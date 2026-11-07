@@ -30,7 +30,7 @@ export const TILT = (LAYOUT.case.tiltDegrees * Math.PI) / 180
 const DESK_OFFSET =
   (-LAYOUT.case.frontBottomZ + (LAYOUT.case.depth / 2) * Math.tan(TILT)) * Math.cos(TILT)
 /** Lifts the case off the desk, as its rubber feet do. */
-const FOOT_HEIGHT = 0.05
+const FOOT_HEIGHT = 0.02
 /** Height of the keycap base above the plate. */
 const CAP_HEIGHT = 0.66
 const PRESS_SECONDS = 0.07
@@ -194,7 +194,7 @@ export class KeyboardRig {
     if (!shadowPlane) throw new Error('Model is missing part: shadowPlane')
     shadow.flipY = false
     shadowPlane.material = createShadowMaterial(shadow)
-    shadowPlane.position.y = 0.01
+    shadowPlane.position.y = 0
     this.shadow = shadowPlane
     this.root.add(shadowPlane)
 

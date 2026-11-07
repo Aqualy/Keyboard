@@ -31,8 +31,9 @@ KEY_AREA_D = LAYOUT["rows"] * PITCH
 SEAM_START = CASE["seamStartY"]
 SEAM_END = CASE["seamEndY"]
 UPPER_WALL = 0.34
-LOWER_STEP = 0.16
+LOWER_STEP = 0.1
 TRAY_INSET = 0.5
+PORT_RECESS = 0.16
 
 
 # Scene helpers ---------------------------------------------------------------
@@ -168,6 +169,17 @@ def smooth_shade(obj, angle=38):
     obj.data.set_sharp_from_angle(angle=math.radians(angle))
 
 
+def merge_flat_faces(obj):
+    """Boolean cuts leave sliver triangles whose stray normals streak across flat walls."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0005)
+    bmesh.ops.dissolve_degenerate(bm, dist=0.0005, edges=bm.edges)
+    bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(1), verts=bm.verts, edges=bm.edges)
+    bm.to_mesh(obj.data)
+    bm.free()
+
+
 def flatten_large_faces(obj):
     """Stops big flat panels picking up shading from the small bevels around them."""
     mod = obj.modifiers.new("weighted", "WEIGHTED_NORMAL")
@@ -191,6 +203,11 @@ def stab_offset(key):
 def desk_z(y):
     """Underside of the case, a straight wedge resting on the desk."""
     return CASE["frontBottomZ"] - (y + CASE["depth"] / 2) * math.tan(TILT)
+
+
+def rear_wall():
+    """Y of the lower lid's back wall, which sits just inside the upper lid."""
+    return CASE["depth"] / 2 - LOWER_STEP
 
 
 def seam_z(y):
@@ -274,32 +291,34 @@ def build_lower_lid(mat):
 
     boolean(lid, prism("cavity", case_outline(4, TRAY_INSET), -1.12, 1))
 
-    # Recessed port panel on the back edge, toward the keyboard's left.
-    back = CASE["depth"] / 2
+    # Recessed port panel on the back wall, toward the keyboard's left.
+    wall = rear_wall()
     bm = bmesh.new()
-    add_box(bm, -15.1, -6.2, back - 0.13, back + 1, -1.86, -0.72)
+    add_box(bm, -15.1, -6.2, wall - PORT_RECESS, wall + 1, -1.86, -0.72)
     boolean(lid, to_object("portRecess", bm))
     bm = bmesh.new()
-    add_box(bm, -14.25, -13.15, back - 1.2, back, -1.48, -1.02)
+    add_box(bm, -14.25, -13.15, wall - 1.2, wall, -1.48, -1.02)
     boolean(lid, to_object("usbPort", bm))
     bm = bmesh.new()
-    add_box(bm, -9.0, -6.6, back - 0.6, back, -1.66, -0.95)
+    add_box(bm, -9.0, -6.6, wall - 0.6, wall, -1.66, -0.95)
     boolean(lid, to_object("receiverSlot", bm))
-    soften(lid, 0.05, 3, 32, 34)
-    flatten_large_faces(lid)
+
+    # No bevel here. Its small faces would smear shading across these large flat walls.
+    merge_flat_faces(lid)
+    smooth_shade(lid, 30)
     return lid
 
 
 def build_rear_details(mat_dark, mat_case):
-    back = CASE["depth"] / 2
+    panel = rear_wall() - PORT_RECESS
     bm = bmesh.new()
-    add_box(bm, -14.05, -13.35, back - 0.5, back - 0.16, -1.32, -1.17)  # USB-C tongue
+    add_box(bm, -14.05, -13.35, panel - 0.5, panel - 0.2, -1.32, -1.17)  # USB-C tongue
     dark = to_object("rearDark", bm, mat_dark)
 
     bm = bmesh.new()
-    add_box(bm, -8.85, -6.75, back - 0.34, back - 0.06, -1.56, -1.05)  # 2.4G receiver
-    add_box(bm, -11.0, -10.2, back - 0.2, back - 0.05, -1.42, -1.14)  # mode switch
-    add_box(bm, -12.5, -11.8, back - 0.2, back - 0.05, -1.42, -1.14)  # OS switch
+    add_box(bm, -8.85, -6.75, panel - 0.3, panel + 0.07, -1.56, -1.05)  # 2.4G receiver
+    add_box(bm, -11.0, -10.2, panel - 0.1, panel + 0.05, -1.42, -1.14)  # mode switch
+    add_box(bm, -12.5, -11.8, panel - 0.1, panel + 0.05, -1.42, -1.14)  # OS switch
     light = to_object("rearLight", bm, mat_case)
     soften(light, 0.03, 2)
     return [dark, light]
@@ -900,6 +919,18 @@ def preview():
     shoot("corner", (70, -80, 34), target=(5, -2, 1))
     shoot("rear-corner", (-62, 88, 30), target=(-5, 2, 1))
     shoot("indicator", (20, -34, 26), target=(9, -3.6, 1))
+
+    # Tinted close-ups, since white hides problems in the case surfaces.
+    for name in ("case", "caseLower"):
+        bsdf = next(n for n in bpy.data.materials[name].node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+        bsdf.inputs["Base Color"].default_value = (0.3, 0.45, 0.7, 1)
+    bpy.data.worlds["world"].node_tree.nodes["Background"].inputs["Color"].default_value = (0.6, 0.6, 0.6, 1)
+    cam_data.lens = 90
+    shoot("close-ports", (-22, 42, 10), target=(-10, 6, 1.6))
+    shoot("close-rear-left", (-44, 34, 9), target=(-16, 6, 1.5))
+    shoot("close-rear-right", (44, 34, 9), target=(16, 6, 1.5))
+    shoot("close-front-right", (46, -34, 12), target=(16, -6, 1))
+    shoot("close-front-left", (-46, -34, 12), target=(-16, -6, 1))
 
 
 TASKS = {

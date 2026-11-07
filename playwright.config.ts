@@ -5,6 +5,9 @@ const gpuArgs = process.env.CI
   ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
   : ['--use-angle=d3d11', '--enable-unsafe-webgpu', '--ignore-gpu-blocklist']
 
+// Software rendering can't settle a full 1440x900 canvas in time. This size keeps the desktop layout.
+const desktopViewport = process.env.CI ? { width: 1100, height: 700 } : { width: 1440, height: 900 }
+
 export default defineConfig({
   testDir: 'e2e',
   timeout: process.env.CI ? 180_000 : 60_000,
@@ -27,7 +30,7 @@ export default defineConfig({
   projects: [
     {
       name: 'desktop',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+      use: { ...devices['Desktop Chrome'], viewport: desktopViewport },
     },
     {
       name: 'tablet',

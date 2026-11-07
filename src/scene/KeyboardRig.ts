@@ -32,7 +32,7 @@ const DESK_OFFSET =
 /** Lifts the case off the desk, as its rubber feet do. */
 const FOOT_HEIGHT = 0.02
 /** Height of the keycap base above the plate. */
-const CAP_HEIGHT = 0.66
+const CAP_HEIGHT = LAYOUT.keycapBaseZ
 const PRESS_SECONDS = 0.07
 const FLEX_SECONDS = 0.4
 const FLEX_DEPTH = 0.06

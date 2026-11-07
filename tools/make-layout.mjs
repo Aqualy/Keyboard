@@ -94,17 +94,28 @@ const keys = rows.flatMap((row, rowIndex) => {
   })
 })
 
+const caseSize = { width: 32.5, depth: 11.65 }
+// The key well leaves a raised pad in the top right corner. The knob takes the key slot
+// there, in line with the Del column and the top row.
+const wellMargin = 0.04
+
 const layout = {
   name: 'GMK67',
   pitch,
   columns,
   rows: rows.length,
-  knob: { x: round(7.72 * pitch), y: round(2.1 * pitch) },
+  knob: {
+    x: round(7.5 * pitch),
+    y: round(2 * pitch),
+    radius: 0.8,
+    wellMargin,
+  },
+  // Keycap skirt height above the plate, seated so the cap socket rests on the switch stem's shoulder.
+  keycapBaseZ: 0.48,
   indicator: { x: round(4.75 * pitch), y: round(-2 * pitch), width: 0.72, depth: 1.8 },
   // All in centimetres, in the plate's coordinate frame (plate top is z = 0).
   case: {
-    width: 32.5,
-    depth: 11.65,
+    ...caseSize,
     cornerRadius: 0.5,
     topZ: 0.55,
     partingZ: -0.3,

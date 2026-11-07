@@ -260,8 +260,8 @@ def opening_cutter(z0, z1, name="opening"):
     """Key well, leaving a raised pad under the knob in the top right corner."""
     hw = KEY_AREA_W / 2 + 0.1
     hd = KEY_AREA_D / 2 + 0.1
-    notch_x = 7 * PITCH + 0.04
-    notch_y = 1.5 * PITCH + 0.04
+    notch_x = 7 * PITCH + LAYOUT["knob"]["wellMargin"]
+    notch_y = 1.5 * PITCH + LAYOUT["knob"]["wellMargin"]
     outline = [(-hw, -hd), (hw, -hd), (hw, notch_y), (notch_x, notch_y), (notch_x, hd), (-hw, hd)]
     return prism(name, outline, z0, z1)
 
@@ -398,7 +398,9 @@ def build_stabilizers(mat, mat_wire):
         for side in (-1, 1):
             cx = key["x"] + side * offset
             add_box(bm, cx - 0.33, cx + 0.33, key["y"] - 0.58, key["y"] + 0.68, -0.42, 0.34)
-            add_box(bm, cx - 0.17, cx + 0.17, key["y"] - 0.2, key["y"] + 0.2, 0.34, 0.86)
+            # The stems stay still when a key is pressed, so they stop at the switch stem's
+            # shoulder and never reach the top of a pressed cap.
+            add_box(bm, cx - 0.17, cx + 0.17, key["y"] - 0.2, key["y"] + 0.2, 0.34, 0.56)
     housing = to_object("stabilizers", bm, mat)
     soften(housing, 0.03, 1, 40)
 
@@ -462,7 +464,7 @@ def build_indicator(mat_body, mat_face, mat_light):
 def build_knob(mat):
     x, y = LAYOUT["knob"]["x"], LAYOUT["knob"]["y"]
     bm = bmesh.new()
-    add_cylinder(bm, 0, 0, 0.95, CASE["topZ"] + 0.05, CASE["topZ"] + 1.16, 64)
+    add_cylinder(bm, 0, 0, LAYOUT["knob"]["radius"], CASE["topZ"] + 0.05, CASE["topZ"] + 1.16, 64)
     add_cylinder(bm, 0, 0, 0.34, -0.3, CASE["topZ"] + 0.05, 16)
     knob = to_object("knob", bm, mat)
     soften(knob, 0.09, 4, 40)
@@ -785,7 +787,7 @@ def instance_keycaps(profile="cherry"):
         name = f"w{round(key['width'] * 100)}_r{row}{'_h' if key['homing'] else ''}"
         obj = bpy.data.objects.new(f"cap_{key['code']}", caps[name].data)
         bpy.context.scene.collection.objects.link(obj)
-        obj.location = (key["x"], key["y"], 0.66)
+        obj.location = (key["x"], key["y"], LAYOUT["keycapBaseZ"])
         objs.append(obj)
     for cap in caps.values():
         cap.hide_render = True

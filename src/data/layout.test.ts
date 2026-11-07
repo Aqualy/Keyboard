@@ -42,8 +42,14 @@ describe('GMK67 layout', () => {
           Math.abs(key.x - x) < (key.width / 2) * LAYOUT.pitch + halfWidth - 0.001 &&
           Math.abs(key.y - y) < LAYOUT.pitch - 0.001,
       )
-    expect(clash(LAYOUT.knob.x, LAYOUT.knob.y, 0.95)).toBe(false)
+    expect(clash(LAYOUT.knob.x, LAYOUT.knob.y, LAYOUT.knob.radius)).toBe(false)
     expect(clash(LAYOUT.indicator.x, LAYOUT.indicator.y, LAYOUT.indicator.width / 2)).toBe(false)
+  })
+
+  it('puts the knob in the key slot above Del', () => {
+    const del = KEYS.find((key) => key.code === 'Delete')!
+    expect(LAYOUT.knob.x).toBeCloseTo(del.x, 3)
+    expect(LAYOUT.knob.y).toBeCloseTo(del.y + LAYOUT.pitch, 3)
   })
 
   it('matches the bottom row of the real board', () => {

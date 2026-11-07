@@ -113,6 +113,24 @@ test('an isolated part survives the exploded view and the typing test', async ({
   expect(errors).toEqual([])
 })
 
+test('the lighting folder darkens the room and lights the board', async ({ page }) => {
+  const errors = trackErrors(page)
+  await openConfigurator(page)
+  await openFolder(page, 'Lighting')
+  await expect(page.locator('.app')).toHaveAttribute('data-dark', 'true')
+  await waitForStillCanvas(page)
+  const unlit = await canvasImage(page)
+  await choose(page, 'Effect', 'Static')
+  await choose(page, 'Light colour', 'Red')
+  await expect(page).toHaveURL(/rgb=static/)
+  await expect(page).toHaveURL(/rgbColour=red/)
+  await waitForStillCanvas(page)
+  expect(sameImage(await canvasImage(page), unlit)).toBe(false)
+  await openFolder(page, 'Case')
+  await expect(page.locator('.app')).toHaveAttribute('data-dark', 'false')
+  expect(errors).toEqual([])
+})
+
 test('explodes into labelled layers and reassembles', async ({ page, hasTouch }) => {
   test.skip(hasTouch, 'Hover is desktop only')
   await openConfigurator(page)

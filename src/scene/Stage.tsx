@@ -9,6 +9,7 @@ import { STAGE_CAMERA } from './camera'
 import { CameraRig } from './CameraRig'
 import { ConfigSync } from './ConfigSync'
 import { Interaction } from './Interaction'
+import { Lighting } from './Lighting'
 import { KeyboardRig } from './KeyboardRig'
 import { arrangementFor } from './layers'
 import { createLegendTexture, legendFontReady } from './legends'
@@ -53,7 +54,6 @@ function Keyboard() {
     environment.mapping = EquirectangularReflectionMapping
     environment.colorSpace = SRGBColorSpace
     scene.environment = environment
-    scene.environmentIntensity = 1.02
     rig.reveal()
     useStage.getState().setReady()
   }, [environment, scene, rig])
@@ -72,6 +72,7 @@ function Keyboard() {
     <>
       <Interaction rig={rig} />
       <ConfigSync rig={rig} />
+      <Lighting />
     </>
   )
 }

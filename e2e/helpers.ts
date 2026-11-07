@@ -48,6 +48,9 @@ const FOLDER_OF: Record<string, string> = {
   Type: 'Switches',
   Switch: 'Switches',
   Plate: 'Plate',
+  Effect: 'Lighting',
+  'Light colour': 'Lighting',
+  Brightness: 'Lighting',
 }
 
 /** Opens a configurator folder by its tab. */
@@ -55,6 +58,15 @@ export async function openFolder(page: Page, folder: string) {
   const tab = page.locator('.folder-tab', { has: page.getByText(folder, { exact: true }) })
   await tab.click()
   await expect(tab).toHaveAttribute('aria-expanded', 'true')
+  // The open folder widens over a short transition. Wait for it, as a person would.
+  const panel = page.locator('.folder', { has: tab })
+  let previous = await panel.boundingBox()
+  for (;;) {
+    await page.waitForTimeout(80)
+    const next = await panel.boundingBox()
+    if (next && previous && next.x === previous.x && next.width === previous.width) return
+    previous = next
+  }
 }
 
 /** Picks a radio by name inside one option group, opening its folder first. */

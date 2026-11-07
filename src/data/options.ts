@@ -294,6 +294,35 @@ export const KNOBS = [
   roughness: number
 }[]
 
+/** Lighting effects. The shader reads the index, so keep the order in sync with materials.ts. */
+export const RGB_EFFECTS = [
+  { id: 'off', name: 'Off' },
+  { id: 'static', name: 'Static' },
+  { id: 'spectrum', name: 'Spectrum' },
+  { id: 'wave', name: 'Wave' },
+  { id: 'ripple', name: 'Ripple' },
+] as const
+
+export const RGB_COLOURS = [
+  { id: 'white', name: 'White', hex: '#fff4e6' },
+  { id: 'red', name: 'Red', hex: '#ff2236' },
+  { id: 'green', name: 'Green', hex: '#2bff6a' },
+  { id: 'cyan', name: 'Cyan', hex: '#1fe4ff' },
+  { id: 'blue', name: 'Blue', hex: '#2a52ff' },
+  { id: 'violet', name: 'Violet', hex: '#9a3cff' },
+  { id: 'pink', name: 'Pink', hex: '#ff3fb4' },
+] as const satisfies readonly Swatch[]
+
+export const BRIGHTNESS = [
+  { id: 'low', name: 'Low', intensity: 0.9 },
+  { id: 'medium', name: 'Medium', intensity: 1.8 },
+  { id: 'high', name: 'High', intensity: 3 },
+] as const
+
+export type RgbEffectId = (typeof RGB_EFFECTS)[number]['id']
+export type RgbColourId = (typeof RGB_COLOURS)[number]['id']
+export type BrightnessId = (typeof BRIGHTNESS)[number]['id']
+
 export type ColourwayId = (typeof COLOURWAYS)[number]['id']
 export type ProfileId = (typeof PROFILES)[number]['id']
 export type SwitchId = (typeof SWITCHES)[number]['id']

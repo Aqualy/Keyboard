@@ -3,7 +3,7 @@ import { create } from 'zustand'
 export type StageMode = 'configure' | 'exploded' | 'test'
 
 /** The open folder in the configurator. One part of the keyboard is edited at a time. */
-export const SECTIONS = ['case', 'keycaps', 'switches', 'plate'] as const
+export const SECTIONS = ['case', 'keycaps', 'switches', 'plate', 'lighting'] as const
 export type Section = (typeof SECTIONS)[number]
 
 export interface PartHover {
@@ -52,3 +52,7 @@ export const useStage = create<StageStore>((set) => ({
   resetView: () => set((state) => ({ resetRequest: state.resetRequest + 1 })),
   setHoveredPart: (hoveredPart) => set({ hoveredPart }),
 }))
+
+/** The room goes dark while lighting is being configured, so the LEDs can be seen. */
+export const isDark = (state: Pick<StageStore, 'mode' | 'section'>) =>
+  state.mode === 'configure' && state.section === 'lighting'

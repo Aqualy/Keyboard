@@ -1,5 +1,6 @@
-import { useId, useState, type ReactNode } from 'react'
+import { useId, useState, type CSSProperties, type ReactNode } from 'react'
 import {
+  BRIGHTNESS,
   CASE_COLOURS,
   COLOURWAYS,
   KEYCAP_COLOURS,
@@ -7,6 +8,8 @@ import {
   LEGEND_COLOURS,
   PLATES,
   PROFILES,
+  RGB_COLOURS,
+  RGB_EFFECTS,
   SWITCHES,
   SWITCH_TYPES,
   byId,
@@ -29,6 +32,7 @@ const TITLES: Record<Section, string> = {
   keycaps: 'Keycaps',
   switches: 'Switches',
   plate: 'Plate',
+  lighting: 'Lighting',
 }
 
 interface FolderProps {
@@ -163,16 +167,51 @@ function PlateFolder() {
   )
 }
 
+function LightingFolder() {
+  const config = useConfig((state) => state.config)
+  const update = useConfig((state) => state.update)
+  const on = config.rgb !== 'off'
+  return (
+    <Folder id="lighting" value={byId(RGB_EFFECTS, config.rgb).name}>
+      <Pills
+        label="Effect"
+        wide
+        options={RGB_EFFECTS}
+        value={config.rgb}
+        onChange={(id) => update({ rgb: id })}
+      />
+      {/* Only a static effect has one colour; the others run through the spectrum. */}
+      {config.rgb === 'static' && (
+        <Swatches
+          label="Light colour"
+          options={RGB_COLOURS}
+          value={config.rgbColour}
+          onChange={(id) => update({ rgbColour: id })}
+        />
+      )}
+      {on && (
+        <Pills
+          label="Brightness"
+          options={BRIGHTNESS}
+          value={config.brightness}
+          onChange={(id) => update({ brightness: id })}
+        />
+      )}
+    </Folder>
+  )
+}
+
 const FOLDERS: Record<Section, () => ReactNode> = {
   case: CaseFolder,
   keycaps: KeycapsFolder,
   switches: SwitchesFolder,
   plate: PlateFolder,
+  lighting: LightingFolder,
 }
 
 export function Folders() {
   return (
-    <div className="folders">
+    <div className="folders" style={{ '--folder-count': SECTIONS.length } as CSSProperties}>
       {SECTIONS.map((id) => {
         const Content = FOLDERS[id]
         return <Content key={id} />

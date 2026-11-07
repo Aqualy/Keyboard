@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import {
+  BRIGHTNESS,
   CASE_COLOURS,
   COLOURWAYS,
   KEYCAP_COLOURS,
@@ -7,12 +8,17 @@ import {
   LEGEND_COLOURS,
   PLATES,
   PROFILES,
+  RGB_COLOURS,
+  RGB_EFFECTS,
   SWITCHES,
+  type BrightnessId,
   type Colours,
   type ColourwayId,
   type KnobId,
   type PlateId,
   type ProfileId,
+  type RgbColourId,
+  type RgbEffectId,
   type SwitchId,
 } from '../data/options'
 
@@ -21,6 +27,9 @@ export interface Config extends Colours {
   switch: SwitchId
   plate: PlateId
   knob: KnobId
+  rgb: RgbEffectId
+  rgbColour: RgbColourId
+  brightness: BrightnessId
 }
 
 export const DEFAULT_CONFIG: Config = {
@@ -29,6 +38,10 @@ export const DEFAULT_CONFIG: Config = {
   switch: 'cream',
   plate: 'pc',
   knob: 'silver',
+  // Off, so the starting board is the plain white GMK67.
+  rgb: 'off',
+  rgbColour: 'cyan',
+  brightness: 'medium',
 }
 
 const CHOICES: Record<keyof Config, readonly { id: string }[]> = {
@@ -41,6 +54,9 @@ const CHOICES: Record<keyof Config, readonly { id: string }[]> = {
   switch: SWITCHES,
   plate: PLATES,
   knob: KNOBS,
+  rgb: RGB_EFFECTS,
+  rgbColour: RGB_COLOURS,
+  brightness: BRIGHTNESS,
 }
 
 const FIELDS = Object.keys(CHOICES) as (keyof Config)[]

@@ -20,7 +20,7 @@ describe('Folders', () => {
 
   it('starts with only the case folder open', () => {
     expect(tab('Case')).toHaveAttribute('aria-expanded', 'true')
-    for (const name of ['Keycaps', 'Switches', 'Plate']) {
+    for (const name of ['Keycaps', 'Switches', 'Plate', 'Lighting']) {
       expect(tab(name)).toHaveAttribute('aria-expanded', 'false')
     }
     expect(screen.queryByRole('group', { name: 'Profile' })).not.toBeInTheDocument()
@@ -124,5 +124,17 @@ describe('Folders', () => {
     within(group('Knob')).getByRole('radio', { name: 'Silver' }).focus()
     await userEvent.keyboard('{ArrowRight}')
     expect(config().knob).toBe('black')
+  })
+
+  it('only offers a light colour for the static effect, and brightness once lit', async () => {
+    await open('Lighting')
+    expect(screen.queryByRole('group', { name: 'Brightness' })).not.toBeInTheDocument()
+    await userEvent.click(within(group('Effect')).getByRole('radio', { name: 'Wave' }))
+    expect(group('Brightness')).toBeVisible()
+    expect(screen.queryByRole('group', { name: 'Light colour' })).not.toBeInTheDocument()
+    await userEvent.click(within(group('Effect')).getByRole('radio', { name: 'Static' }))
+    await userEvent.click(within(group('Light colour')).getByRole('radio', { name: 'Red' }))
+    expect(config()).toMatchObject({ rgb: 'static', rgbColour: 'red' })
+    expect(tab('Lighting')).toHaveTextContent('Static')
   })
 })

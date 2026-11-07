@@ -1,18 +1,28 @@
 import { CanvasTexture, Color } from 'three'
 import {
+  abs,
   attribute,
   clamp,
   float,
+  fract,
   Fn,
+  length,
   mix,
   positionGeometry,
+  select,
   smoothstep,
   texture,
+  time,
   uniform,
   vec2,
   vec3,
 } from 'three/tsl'
-import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, type Texture } from 'three/webgpu'
+import {
+  MeshBasicNodeMaterial,
+  MeshStandardNodeMaterial,
+  type Node,
+  type Texture,
+} from 'three/webgpu'
 import { LAYOUT } from '../data/layout'
 
 const color = () => uniform(new Color('#ffffff'))
@@ -32,9 +42,56 @@ export const uniforms = {
   knobMetalness: uniform(1),
   knobRoughness: uniform(0.35),
   shadow: uniform(1),
+  /** Index into RGB_EFFECTS. */
+  rgbEffect: uniform(0),
+  rgbColour: color(),
+  /** LED strength. Tweened, so the lights fade on and off. */
+  rgbIntensity: uniform(0),
+  /** 1 normally, 0 for visitors who ask for less motion, which freezes the effects. */
+  rgbSpeed: uniform(1),
 }
 
 const KEY_AREA = vec2(LAYOUT.columns * LAYOUT.pitch, LAYOUT.rows * LAYOUT.pitch)
+
+type Vec2Node = Node<'vec2'>
+type FloatNode = Node<'float'>
+
+/** Hue to a fully saturated colour. */
+const hue = (h: FloatNode) =>
+  clamp(
+    abs(
+      fract(vec3(h).add(vec3(0, 2 / 3, 1 / 3)))
+        .mul(6)
+        .sub(3),
+    ).sub(1),
+    0,
+    1,
+  )
+
+/**
+ * LED colour at a point on the board, as 0..1 across the key area. Every part samples the same
+ * pattern, so a wave runs continuously across caps, switches and plate.
+ */
+const ledColour = (uv: Vec2Node) => {
+  const t = time.mul(uniforms.rgbSpeed)
+  const aspect = KEY_AREA.x.div(KEY_AREA.y)
+  const fromCentre = length(uv.sub(0.5).mul(vec2(aspect, 1)))
+  const spectrum = hue(t.mul(0.08))
+  const wave = hue(uv.x.sub(t.mul(0.22)))
+  const ripple = hue(fromCentre.mul(0.35).sub(t.mul(0.3)))
+  const effect = uniforms.rgbEffect
+  return select(
+    effect.equal(1),
+    uniforms.rgbColour,
+    select(effect.equal(2), spectrum, select(effect.equal(3), wave, ripple)),
+  )
+}
+
+/** Board position of a point in the plate frame, as 0..1 across the key area. */
+const boardUv = (xz: Vec2Node) => xz.div(KEY_AREA).add(0.5)
+
+const glow = (uv: Vec2Node, strength: number | FloatNode) =>
+  ledColour(uv).mul(uniforms.rgbIntensity).mul(strength)
 
 export function createKeycapMaterial(legends: CanvasTexture) {
   const material = new MeshStandardNodeMaterial({ roughness: 0.56, metalness: 0 })
@@ -59,6 +116,26 @@ export function createKeycapMaterial(legends: CanvasTexture) {
     return mix(printed, vec3(0), occlusion)
   })()
 
+  // Light escapes under the skirt, so only the bottom of each cap glows and keytops stay clean.
+  material.emissiveNode = Fn(() => {
+    const key = attribute('aKey', 'vec2')
+    const skirt = float(1).sub(smoothstep(0, 0.32, positionGeometry.y))
+    return glow(boardUv(key.add(positionGeometry.xz)), skirt.mul(0.9))
+  })()
+
+  return material
+}
+
+/** Switch housings, lit from inside by their LED. */
+export function createHousingMaterial(base: Color) {
+  const material = new MeshStandardNodeMaterial({ roughness: 0.3, metalness: 0 })
+  material.colorNode = vec3(base.r, base.g, base.b)
+  material.emissiveNode = Fn(() => {
+    const key = attribute('aKey', 'vec2')
+    // Brightest at the top, where the light pipe is.
+    const height = smoothstep(-0.2, 0.52, positionGeometry.y)
+    return glow(boardUv(key.add(positionGeometry.xz)), height.mul(1.4))
+  })()
   return material
 }
 
@@ -94,6 +171,8 @@ export function createLowerLidMaterial() {
 export function createPlateMaterial() {
   const material = new MeshStandardNodeMaterial()
   material.colorNode = uniforms.plate
+  // A faint wash where the LEDs spill onto the plate.
+  material.emissiveNode = glow(boardUv(positionGeometry.xz), 0.12)
   material.metalnessNode = uniforms.plateMetalness
   material.roughnessNode = uniforms.plateRoughness
   return material

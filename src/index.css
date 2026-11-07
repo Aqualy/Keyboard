@@ -52,6 +52,26 @@ button {
   grid-template-rows: minmax(0, 1fr) auto;
   height: 100dvh;
   overflow: hidden;
+  background: var(--stage);
+  transition:
+    background-color 1s ease,
+    color 1s ease;
+}
+
+/* The room goes dark while lighting is configured. The folders stay white. */
+.app[data-dark='true'] {
+  --stage: #151515;
+  color: #f2f2f2;
+}
+
+.app[data-dark='true'] .summary p {
+  color: #b9b9b9;
+}
+
+.app[data-dark='true'] .folder-tab,
+.app[data-dark='true'] .folder-body,
+.app[data-dark='true'] .tool {
+  color: var(--ink);
 }
 
 /* Stage */
@@ -300,6 +320,10 @@ button {
 
 .folder-body[hidden] {
   display: none;
+}
+
+.choice-wide {
+  grid-column: 1 / -1;
 }
 
 /* A switch list wraps to two rows, so it takes the full height beside type and specs. */
@@ -554,7 +578,7 @@ button {
     --folder-height: 300px;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--folder-count), minmax(0, 1fr));
     align-items: end;
     gap: 0 6px;
     padding: 0 var(--gutter);

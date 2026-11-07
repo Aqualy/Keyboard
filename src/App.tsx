@@ -1,7 +1,7 @@
 import { Component, lazy, Suspense, type ReactNode } from 'react'
 import { COLOURWAYS } from './data/options'
 import { matchColourway, useConfig } from './state/config'
-import { useStage } from './state/stage'
+import { isDark, useStage } from './state/stage'
 import { TypingTest } from './test/TypingTest'
 import { Folders } from './ui/Folders'
 import { ArrowIcon } from './ui/icons'
@@ -61,10 +61,11 @@ function Summary() {
 export default function App() {
   const mode = useStage((state) => state.mode)
   const ready = useStage((state) => state.ready)
+  const dark = useStage(isDark)
   const supported = hasGraphicsSupport()
 
   return (
-    <main className="app" data-mode={mode} data-ready={ready}>
+    <main className="app" data-mode={mode} data-ready={ready} data-dark={dark}>
       <div className="stage">
         {supported ? (
           <StageBoundary>

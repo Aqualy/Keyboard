@@ -17,6 +17,9 @@ const custom: Config = {
   switch: 'boxnavy',
   plate: 'brass',
   knob: 'black',
+  rgb: 'static',
+  rgbColour: 'violet',
+  brightness: 'high',
 }
 
 describe('parseConfig', () => {
@@ -48,6 +51,16 @@ describe('parseConfig', () => {
 
   it('does not accept a colour from another palette', () => {
     expect(parseConfig('legend=beet').legend).toBe(DEFAULT_CONFIG.legend)
+    expect(parseConfig('rgbColour=beet').rgbColour).toBe(DEFAULT_CONFIG.rgbColour)
+  })
+
+  it('starts with the lights off', () => {
+    expect(DEFAULT_CONFIG.rgb).toBe('off')
+  })
+
+  it('reads a lighting build', () => {
+    expect(parseConfig('rgb=wave&brightness=low')).toMatchObject({ rgb: 'wave', brightness: 'low' })
+    expect(parseConfig('rgb=disco').rgb).toBe('off')
   })
 
   it('uses the last-resort default for repeated params by taking the first', () => {

@@ -49,6 +49,8 @@ const ISOLATED: Record<Section, LayerId | null> = {
   keycaps: 'keycaps',
   switches: 'switches',
   plate: 'plate',
+  // Lighting runs across the whole board, so it stays together.
+  lighting: null,
 }
 
 export function arrangementFor(mode: StageMode, section: Section): Arrangement {

@@ -8,16 +8,18 @@ interface Option {
 
 interface ChoiceProps<T extends Option> {
   label: string
+  /** Spans the folder's full width, for a long row of options. */
+  wide?: boolean
   options: readonly T[]
   value: string | undefined
   onChange: (id: T['id']) => void
 }
 
 /** Native radios underneath, for keyboard and screen reader support. */
-export function Pills<T extends Option>({ label, options, value, onChange }: ChoiceProps<T>) {
+export function Pills<T extends Option>({ label, options, value, onChange, wide }: ChoiceProps<T>) {
   const name = useId()
   return (
-    <fieldset className="choice">
+    <fieldset className={wide ? 'choice choice-wide' : 'choice'}>
       <legend className="label">{label}</legend>
       <div className="pills">
         {options.map((option) => (

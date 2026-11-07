@@ -7,6 +7,7 @@ import {
   type BufferGeometry,
   type CanvasTexture,
   type Material,
+  type MeshStandardMaterial,
   type Mesh,
   type Object3D,
   type Texture,
@@ -18,6 +19,7 @@ import type { ProfileId } from '../data/options'
 import { LAYERS, liftsFor, staggerOrder, type Arrangement, type LayerId } from './layers'
 import {
   createCaseMaterial,
+  createHousingMaterial,
   createKeycapMaterial,
   createKnobMaterial,
   createLowerLidMaterial,
@@ -176,7 +178,13 @@ export class KeyboardRig {
     const layer = this.layers.get('switches')!
     const housingNode = model.scene.getObjectByName('housing') as Mesh
     const stemNode = model.scene.getObjectByName('stem') as Mesh
-    const housings = instanced(housingNode.geometry, housingNode.material, KEYS, 'housings')
+    const housingGeometry = housingNode.geometry.clone()
+    housingGeometry.setAttribute(
+      'aKey',
+      new InstancedBufferAttribute(new Float32Array(KEYS.flatMap((key) => [key.x, -key.y])), 2),
+    )
+    const base = (housingNode.material as MeshStandardMaterial).color
+    const housings = instanced(housingGeometry, createHousingMaterial(base), KEYS, 'housings')
     const stems = instanced(stemNode.geometry, createStemMaterial(), KEYS, 'stems')
     KEYS.forEach((key, index) => {
       place({ mesh: housings, index, baseY: 0 }, key, 0)

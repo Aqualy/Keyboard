@@ -41,4 +41,10 @@ browser tests. Commit messages follow [Conventional Commits](https://www.convent
 - `src/scene` holds the 3D scene. `KeyboardRig` owns the objects, and colours are shared uniforms, so a
   change is one tween rather than a material rebuild.
 - `src/state` holds the build and stage state. A build is mirrored into the URL, so reloading keeps it.
-- Key sounds are synthesised in `src/audio`, and can be replaced with recorded samples.
+- Key sounds are recordings played through `src/audio`. Plates reshape them with pitch and filtering.
+
+## Credits
+
+Switch recordings in `public/sounds` come from
+[Mechanical Keyboard Simulator](https://github.com/tplai/kbsim) by Thomas Lai, under the MIT licence
+(`public/sounds/LICENSE.md`). Each folder is named after the switch it was recorded from.

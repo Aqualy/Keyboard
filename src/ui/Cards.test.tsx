@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { SWITCHES, SWITCH_TYPES } from '../data/options'
 import { DEFAULT_CONFIG, useConfig } from '../state/config'
 import { Cards } from './Cards'
 
@@ -16,7 +17,7 @@ describe('Cards', () => {
   it('reflects the default build', () => {
     expect(within(group('Colourway')).getByRole('radio', { name: 'White' })).toBeChecked()
     expect(within(group('Profile')).getByRole('radio', { name: 'Cherry' })).toBeChecked()
-    expect(within(group('Switch')).getByRole('radio', { name: 'Linear' })).toBeChecked()
+    expect(within(group('Switch')).getByRole('radio', { name: 'Cream' })).toBeChecked()
     expect(within(group('Plate')).getByRole('radio', { name: 'PC' })).toBeChecked()
   })
 
@@ -52,10 +53,29 @@ describe('Cards', () => {
   })
 
   it('updates specs with the selected switch', async () => {
-    expect(screen.getByText('45 g')).toBeInTheDocument()
-    await userEvent.click(within(group('Switch')).getByRole('radio', { name: 'Clicky' }))
-    expect(screen.getByText('60 g')).toBeInTheDocument()
-    expect(screen.queryByText('45 g')).not.toBeInTheDocument()
+    expect(screen.getByText('NovelKeys')).toBeInTheDocument()
+    await userEvent.click(within(group('Switch')).getByRole('radio', { name: 'Red Ink' }))
+    expect(screen.getByText('Gateron')).toBeInTheDocument()
+    expect(screen.queryByText('NovelKeys')).not.toBeInTheDocument()
+  })
+
+  it('offers every switch under its type', async () => {
+    const seen: string[] = []
+    for (const type of SWITCH_TYPES) {
+      await userEvent.click(within(group('Type')).getByRole('radio', { name: type.name }))
+      const names = within(group('Switch'))
+        .getAllByRole('radio')
+        .map((radio) => (radio.closest('label') as HTMLElement).textContent)
+      expect(names.length).toBeGreaterThan(0)
+      seen.push(...(names as string[]))
+    }
+    expect(seen.sort()).toEqual(SWITCHES.map((option) => option.name).sort())
+  })
+
+  it('selects the first switch of a new type', async () => {
+    await userEvent.click(within(group('Type')).getByRole('radio', { name: 'Clicky' }))
+    expect(config().switch).toBe('boxnavy')
+    expect(within(group('Switch')).getByRole('radio', { name: 'Box Navy' })).toBeChecked()
   })
 
   it('updates specs with the selected plate', async () => {

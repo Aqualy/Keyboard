@@ -10,6 +10,7 @@ import {
   SWITCHES,
   byId,
 } from '../data/options'
+import { preloadSwitch } from '../audio/engine'
 import { motion } from '../motion'
 import { useConfig, type Config } from '../state/config'
 import type { KeyboardRig } from './KeyboardRig'
@@ -60,6 +61,7 @@ export function ConfigSync({ rig }: { rig: KeyboardRig }) {
     return useConfig.subscribe((state, previous) => {
       if (state.config === previous.config) return
       applyConfig(rig, state.config, motion(COLOUR_SECONDS))
+      if (state.config.switch !== previous.config.switch) preloadSwitch(state.config.switch)
       if (state.config.profile !== previous.config.profile) {
         rig.changeProfile(state.config.profile)
       }

@@ -8,6 +8,7 @@ import {
   PLATES,
   PROFILES,
   SWITCHES,
+  SWITCH_TYPES,
   byId,
 } from '../data/options'
 import { matchColourway, useConfig } from '../state/config'
@@ -77,17 +78,26 @@ function KeycapsCard() {
 }
 
 function SwitchCard() {
-  const selected = useConfig((state) => state.config.switch)
+  const selected = useConfig((state) => byId(SWITCHES, state.config.switch))
   const update = useConfig((state) => state.update)
   return (
     <Card title="Switch">
       <Pills
+        label="Type"
+        options={SWITCH_TYPES}
+        value={selected.type}
+        onChange={(type) => {
+          const first = SWITCHES.find((option) => option.type === type)
+          if (first) update({ switch: first.id })
+        }}
+      />
+      <Pills
         label="Switch"
-        options={SWITCHES}
-        value={selected}
+        options={SWITCHES.filter((option) => option.type === selected.type)}
+        value={selected.id}
         onChange={(id) => update({ switch: id })}
       />
-      <Specs rows={byId(SWITCHES, selected).specs} />
+      <Specs rows={selected.specs} />
     </Card>
   )
 }

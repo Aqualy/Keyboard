@@ -26,7 +26,7 @@ export interface Config extends Colours {
 export const DEFAULT_CONFIG: Config = {
   ...COLOURWAYS[0].colours,
   profile: 'cherry',
-  switch: 'linear',
+  switch: 'cream',
   plate: 'pc',
   knob: 'silver',
 }

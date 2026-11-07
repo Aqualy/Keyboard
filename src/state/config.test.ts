@@ -14,7 +14,7 @@ const custom: Config = {
   case: 'beet',
   accent: 'oak',
   profile: 'sa',
-  switch: 'clicky',
+  switch: 'boxnavy',
   plate: 'brass',
   knob: 'black',
 }
@@ -84,11 +84,11 @@ describe('useConfig', () => {
   })
 
   it('applies a colourway without touching hardware', () => {
-    useConfig.getState().update({ switch: 'clicky' })
+    useConfig.getState().update({ switch: 'boxnavy' })
     useConfig.getState().applyColourway('beet')
     const { config } = useConfig.getState()
     expect(config.case).toBe('beet')
-    expect(config.switch).toBe('clicky')
+    expect(config.switch).toBe('boxnavy')
   })
 
   it('mirrors the build into the URL', () => {

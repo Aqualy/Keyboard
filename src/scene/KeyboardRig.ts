@@ -129,7 +129,8 @@ export class KeyboardRig {
 
   constructor(assets: RigAssets) {
     const { keyboard, keycaps, switchModel, shadow, legends } = assets
-    const nodes = keyboard.scene
+    // Parts move into layers below, so work on a copy of the loader's cached scene.
+    const nodes = keyboard.scene.clone()
 
     this.tilted.position.y = DESK_OFFSET
     this.tilted.rotation.x = TILT
@@ -287,8 +288,9 @@ export class KeyboardRig {
 
   /** Eases the board in once it has loaded. */
   reveal() {
-    gsap.from(this.root.position, { y: 1.4, duration: motion(1.5), ease: 'power3.out' })
-    gsap.from(uniforms.shadow, { value: 0, duration: motion(1.5), ease: 'power2.out' })
+    const duration = motion(1.5)
+    gsap.fromTo(this.root.position, { y: 1.4 }, { y: 0, duration, ease: 'power3.out' })
+    gsap.fromTo(uniforms.shadow, { value: 0 }, { value: 1, duration, ease: 'power2.out' })
   }
 
   rotateKnob(radians: number) {

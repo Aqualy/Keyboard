@@ -30,15 +30,18 @@ export function CameraRig() {
   const knobActive = useStage((state) => state.knobActive)
 
   const controls = useMemo(() => {
-    const instance = new CameraControls(camera, domElement)
+    const instance = new CameraControls(camera)
     instance.minPolarAngle = 0.15
     instance.maxPolarAngle = 1.5
     instance.smoothTime = 0.55
     instance.draggingSmoothTime = 0.12
     return instance
-  }, [camera, domElement])
+  }, [camera])
 
-  useEffect(() => () => controls.dispose(), [controls])
+  useEffect(() => {
+    controls.connect(domElement)
+    return () => controls.disconnect()
+  }, [controls, domElement])
 
   useEffect(() => {
     const onRest = () => {

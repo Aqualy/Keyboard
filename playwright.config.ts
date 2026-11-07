@@ -19,12 +19,31 @@ export default defineConfig({
     launchOptions: { args: gpuArgs },
     trace: 'retain-on-failure',
   },
-  webServer: {
-    command: 'npm run preview -- --host 127.0.0.1 --port 4173 --strictPort',
-    url: 'http://127.0.0.1:4173',
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: [
+    {
+      command: 'npm run preview -- --host 127.0.0.1 --port 4173 --strictPort',
+      url: 'http://127.0.0.1:4173',
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: 'npm run dev -- --host 127.0.0.1 --port 4174 --strictPort',
+      url: 'http://127.0.0.1:4174',
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
+  testIgnore: /dev-server/,
   projects: [
+    // React runs setup twice in development, which production builds never exercise.
+    {
+      name: 'dev-server',
+      testMatch: /dev-server/,
+      testIgnore: [],
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1440, height: 900 },
+        baseURL: 'http://127.0.0.1:4174',
+      },
+    },
     {
       name: 'desktop',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },

@@ -75,12 +75,28 @@ function layerLabel(event: ThreeEvent<PointerEvent>) {
   return undefined
 }
 
-function turnKnob(rig: KeyboardRig, radians: number, travel: { current: number }) {
+/** How long the volume stays on screen after the knob stops. */
+const VOLUME_LABEL_MS = 1000
+let hideVolumeTimer: ReturnType<typeof setTimeout> | undefined
+
+/**
+ * Turns the knob, which sets the volume a click at a time. Clockwise is louder, as on any
+ * volume knob. Seen from above, clockwise is a negative turn around the up axis.
+ */
+function turnKnob(
+  rig: KeyboardRig,
+  radians: number,
+  travel: { current: number },
+  at: { x: number; y: number },
+) {
   rig.rotateKnob(radians)
   travel.current += radians
   if (Math.abs(travel.current) >= KNOB_TICK_RADIANS) {
+    useStage.getState().turnVolume(travel.current < 0 ? 1 : -1, at)
     travel.current = 0
     playKnobTick()
+    clearTimeout(hideVolumeTimer)
+    hideVolumeTimer = setTimeout(() => useStage.getState().hideVolume(), VOLUME_LABEL_MS)
   }
 }
 
@@ -110,9 +126,11 @@ export function Interaction({ rig }: { rig: KeyboardRig }) {
 
   const startKnobDrag = (event: ThreeEvent<PointerEvent>) => {
     useStage.getState().setKnobActive(true)
-    let lastX = event.nativeEvent.clientX
+    const { clientX, clientY, offsetX, offsetY } = event.nativeEvent
+    let lastX = clientX
     const move = (moved: PointerEvent) => {
-      turnKnob(rig, (moved.clientX - lastX) * -KNOB_RADIANS_PER_PIXEL, knobTravel)
+      const at = { x: offsetX + moved.clientX - clientX, y: offsetY + moved.clientY - clientY }
+      turnKnob(rig, (moved.clientX - lastX) * -KNOB_RADIANS_PER_PIXEL, knobTravel, at)
       lastX = moved.clientX
     }
     const finish = () => {
@@ -159,15 +177,21 @@ export function Interaction({ rig }: { rig: KeyboardRig }) {
       }}
       onPointerMove={(event: ThreeEvent<PointerEvent>) => {
         event.stopPropagation()
-        if (useStage.getState().mode === 'exploded') showPart(event)
+        const stage = useStage.getState()
+        if (stage.mode === 'exploded') showPart(event)
+        const onKnob = event.object.name === 'knob' && stage.mode !== 'exploded'
+        if (onKnob !== stage.knobHovered) stage.setKnobHovered(onKnob)
       }}
       onPointerOut={() => {
         useStage.getState().setHoveredPart(null)
+        useStage.getState().setKnobHovered(false)
       }}
       onWheel={(event: ThreeEvent<WheelEvent>) => {
-        if (event.object.name !== 'knob') return
+        if (event.object.name !== 'knob' || useStage.getState().mode === 'exploded') return
         event.stopPropagation()
-        turnKnob(rig, event.nativeEvent.deltaY * -0.004, knobTravel)
+        // Scrolling up turns it clockwise, which is louder.
+        const { deltaY, offsetX, offsetY } = event.nativeEvent
+        turnKnob(rig, deltaY * 0.004, knobTravel, { x: offsetX, y: offsetY })
       }}
     />
   )

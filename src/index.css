@@ -169,6 +169,11 @@ button {
   transform: translate(14px, -130%);
 }
 
+/* Over the knob, the pointer shows it can be turned. */
+.app[data-knob='true'] .stage canvas {
+  cursor: ew-resize;
+}
+
 .app[data-mode='test'] .tools {
   top: clamp(4px, 2vh, 20px);
   transform: none;

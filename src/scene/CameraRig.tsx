@@ -43,6 +43,7 @@ export function CameraRig() {
   const caseShape = useConfig((state) => layoutOf(state.config).case)
   const scale = Math.max(caseShape.width / BASE_CASE.width, caseShape.depth / BASE_CASE.depth)
   const knobActive = useStage((state) => state.knobActive)
+  const knobHovered = useStage((state) => state.knobHovered)
 
   const controls = useMemo(() => {
     const instance = new CameraControls(camera)
@@ -87,10 +88,10 @@ export function CameraRig() {
 
   useEffect(() => {
     controls.enabled = !knobActive
-    controls.mouseButtons.wheel = knobActive
-      ? CameraControls.ACTION.NONE
-      : CameraControls.ACTION.DOLLY
-  }, [controls, knobActive])
+    // Over the knob, the wheel turns it, so the camera must not zoom as well.
+    controls.mouseButtons.wheel =
+      knobActive || knobHovered ? CameraControls.ACTION.NONE : CameraControls.ACTION.DOLLY
+  }, [controls, knobActive, knobHovered])
 
   useEffect(() => {
     controls.smoothTime = motion(0.55)

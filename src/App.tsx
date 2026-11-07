@@ -5,7 +5,7 @@ import { isDark, useStage } from './state/stage'
 import { TypingTest } from './test/TypingTest'
 import { Folders } from './ui/Folders'
 import { ArrowIcon } from './ui/icons'
-import { OrbitHint, PartLabel, StageTools } from './ui/StageOverlay'
+import { OrbitHint, PartLabel, StageTools, VolumeLabel } from './ui/StageOverlay'
 
 const Stage = lazy(() => import('./scene/Stage').then(({ Stage }) => ({ default: Stage })))
 
@@ -62,10 +62,11 @@ export default function App() {
   const mode = useStage((state) => state.mode)
   const ready = useStage((state) => state.ready)
   const dark = useStage(isDark)
+  const knob = useStage((state) => state.knobHovered || state.knobActive)
   const supported = hasGraphicsSupport()
 
   return (
-    <main className="app" data-mode={mode} data-ready={ready} data-dark={dark}>
+    <main className="app" data-mode={mode} data-ready={ready} data-dark={dark} data-knob={knob}>
       <div className="stage">
         {supported ? (
           <StageBoundary>
@@ -84,6 +85,7 @@ export default function App() {
             <OrbitHint />
             <StageTools />
             <PartLabel />
+            <VolumeLabel />
           </>
         )}
         {mode === 'test' && <TypingTest />}

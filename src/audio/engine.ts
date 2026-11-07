@@ -50,6 +50,8 @@ function loadSwitch(audio: AudioContext, switchId: SwitchId) {
 
 function play(audio: AudioContext, buffer: AudioBuffer, x: number, pitch = 1, level = 1) {
   const { plate, switch: switchId } = useConfig.getState().config
+  // Squared, so each knob click sounds like an even step in loudness.
+  const volumeLevel = useStage.getState().volume ** 2
   const tone = PLATE_TONES[plate]
   const layout = currentLayout()
   const { rate, gain, pan } = playbackVariation(x, (layout.columns * layout.pitch) / 2)
@@ -63,7 +65,7 @@ function play(audio: AudioContext, buffer: AudioBuffer, x: number, pitch = 1, le
   filter.frequency.value = tone.cutoff
 
   const volume = audio.createGain()
-  volume.gain.value = gain * tone.gain * switchGain(switchId) * level
+  volume.gain.value = gain * tone.gain * switchGain(switchId) * level * volumeLevel
 
   const panner = audio.createStereoPanner()
   panner.pan.value = pan

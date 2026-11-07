@@ -7,6 +7,13 @@ export type StageMode = 'configure' | 'exploded' | 'test'
 export const SECTIONS = ['layout', 'case', 'keycaps', 'switches', 'plate', 'lighting'] as const
 export type Section = (typeof SECTIONS)[number]
 
+/** One click of the knob changes the volume by this much. */
+export const VOLUME_STEP = 0.05
+
+/** The volume after turning the knob some clicks, positive for louder. */
+export const stepVolume = (volume: number, clicks: number) =>
+  Math.min(1, Math.max(0, Math.round((volume + clicks * VOLUME_STEP) * 20) / 20))
+
 export interface PartHover {
   label: string
   x: number
@@ -25,6 +32,16 @@ interface StageStore {
   hoveredPart: PartHover | null
   /** The camera stands down while the knob is being turned. */
   knobActive: boolean
+  /** The pointer is over the knob, so the wheel turns it instead of zooming. */
+  knobHovered: boolean
+  /** Volume of the switch sounds, set with the knob. */
+  volume: number
+  /** Where to show the volume while the knob turns, or null once it settles. */
+  volumeLabel: { x: number; y: number } | null
+  setKnobHovered: (knobHovered: boolean) => void
+  /** Turns the volume by some clicks at a point on the stage. */
+  turnVolume: (clicks: number, at: { x: number; y: number }) => void
+  hideVolume: () => void
   /** A finished typing run, shown on the board as a heatmap. */
   heatmap: Record<string, KeyHeat> | null
   setHeatmap: (heatmap: Record<string, KeyHeat> | null) => void
@@ -47,6 +64,18 @@ export const useStage = create<StageStore>((set) => ({
   resetRequest: 0,
   hoveredPart: null,
   knobActive: false,
+  knobHovered: false,
+  volume: 0.8,
+  volumeLabel: null,
+  setKnobHovered: (knobHovered) => set({ knobHovered }),
+  turnVolume: (clicks, at) =>
+    set((state) => {
+      const volume = stepVolume(state.volume, clicks)
+      // Turning the knob up is a clear wish to hear the board, so it also unmutes.
+      const soundOn = state.soundOn || (clicks > 0 && volume > 0)
+      return { volume, soundOn, volumeLabel: at }
+    }),
+  hideVolume: () => set({ volumeLabel: null }),
   heatmap: null,
   setHeatmap: (heatmap) => set({ heatmap }),
   setKnobActive: (knobActive) => set({ knobActive }),

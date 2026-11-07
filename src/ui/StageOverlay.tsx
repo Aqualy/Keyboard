@@ -60,6 +60,18 @@ export function OrbitHint() {
   )
 }
 
+/** The volume while the knob turns, shown where it is being turned. */
+export function VolumeLabel() {
+  const at = useStage((state) => state.volumeLabel)
+  const volume = useStage((state) => state.volume)
+  if (!at) return null
+  return (
+    <div className="part-label" role="status" style={{ left: at.x, top: at.y }}>
+      Volume {Math.round(volume * 100)}%
+    </div>
+  )
+}
+
 export function PartLabel() {
   const part = useStage((state) => state.hoveredPart)
   if (!part) return null

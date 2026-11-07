@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useStage } from '../state/stage'
-import { OrbitHint, PartLabel, StageTools } from './StageOverlay'
+import { OrbitHint, PartLabel, StageTools, VolumeLabel } from './StageOverlay'
 
 describe('StageTools', () => {
   beforeEach(() => {
@@ -63,5 +63,16 @@ describe('PartLabel', () => {
     useStage.setState({ hoveredPart: { label: 'PCB', x: 10, y: 20 } })
     render(<PartLabel />)
     expect(screen.getByRole('status')).toHaveTextContent('PCB')
+  })
+})
+
+describe('VolumeLabel', () => {
+  it('shows the volume only while the knob turns', () => {
+    useStage.setState({ volume: 0.65, volumeLabel: null })
+    const { rerender } = render(<VolumeLabel />)
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    useStage.setState({ volumeLabel: { x: 5, y: 5 } })
+    rerender(<VolumeLabel />)
+    expect(screen.getByRole('status')).toHaveTextContent('Volume 65%')
   })
 })

@@ -1,0 +1,38 @@
+import { expect, test } from '@playwright/test'
+import { canvasImage, openConfigurator, sameImage, stageBox, waitForStillCanvas } from './helpers'
+
+test.beforeEach(({ hasTouch }) => {
+  test.skip(!hasTouch, 'Touch devices only')
+})
+
+const stagePoint = async (page: Parameters<typeof stageBox>[0], x: number, y: number) => {
+  const box = await stageBox(page)
+  return { x: box.x + box.width * x, y: box.y + box.height * y }
+}
+
+test('tapping the board does not leave a key stuck down', async ({ page }) => {
+  await openConfigurator(page)
+  const untouched = await canvasImage(page)
+  const { x, y } = await stagePoint(page, 0.5, 0.45)
+  await page.touchscreen.tap(x, y)
+  await waitForStillCanvas(page)
+  expect(sameImage(await canvasImage(page), untouched)).toBe(true)
+})
+
+test('tapping a part in the exploded view names it', async ({ page }) => {
+  await openConfigurator(page)
+  await page.getByRole('button', { name: 'Explode keyboard' }).click()
+  await waitForStillCanvas(page)
+  const { x, y } = await stagePoint(page, 0.5, 0.5)
+  await page.touchscreen.tap(x, y)
+  await expect(page.locator('.part-label')).toBeVisible()
+})
+
+test('option cards can be reached by scrolling them sideways', async ({ page, viewport }) => {
+  test.skip((viewport?.height ?? 0) < 500, 'Landscape stacks its cards vertically')
+  await openConfigurator(page)
+  const lastPill = page.getByRole('group', { name: 'Knob' }).getByRole('radio', { name: 'Brass' })
+  await lastPill.scrollIntoViewIfNeeded()
+  await lastPill.tap({ force: true })
+  await expect(page).toHaveURL(/knob=brass/)
+})

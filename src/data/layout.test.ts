@@ -36,14 +36,19 @@ describe('GMK67 layout', () => {
   })
 
   it('leaves room for the knob and the indicator', () => {
-    const clash = (x: number, y: number) =>
+    const clash = (x: number, y: number, halfWidth: number) =>
       KEYS.some(
         (key) =>
-          Math.abs(key.x - x) < ((key.width + 1) / 2) * LAYOUT.pitch - 0.001 &&
+          Math.abs(key.x - x) < (key.width / 2) * LAYOUT.pitch + halfWidth - 0.001 &&
           Math.abs(key.y - y) < LAYOUT.pitch - 0.001,
       )
-    expect(clash(LAYOUT.knob.x, LAYOUT.knob.y)).toBe(false)
-    expect(clash(LAYOUT.indicator.x, LAYOUT.indicator.y)).toBe(false)
+    expect(clash(LAYOUT.knob.x, LAYOUT.knob.y, 0.95)).toBe(false)
+    expect(clash(LAYOUT.indicator.x, LAYOUT.indicator.y, LAYOUT.indicator.width / 2)).toBe(false)
+  })
+
+  it('matches the bottom row of the real board', () => {
+    const widths = KEYS.filter((key) => key.row === 4).map((key) => key.width)
+    expect(widths).toEqual([1.25, 1.25, 1.25, 6.25, 1.25, 1.25, 1, 1, 1])
   })
 
   it('stabilises the four long keys only', () => {

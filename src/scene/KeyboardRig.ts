@@ -19,6 +19,7 @@ import {
   createCaseMaterial,
   createKeycapMaterial,
   createKnobMaterial,
+  createLowerLidMaterial,
   createPlateMaterial,
   createShadowMaterial,
   createStemMaterial,
@@ -28,6 +29,8 @@ import {
 export const TILT = (LAYOUT.case.tiltDegrees * Math.PI) / 180
 const DESK_OFFSET =
   (-LAYOUT.case.frontBottomZ + (LAYOUT.case.depth / 2) * Math.tan(TILT)) * Math.cos(TILT)
+/** Lifts the case off the desk, as its rubber feet do. */
+const FOOT_HEIGHT = 0.05
 /** Height of the keycap base above the plate. */
 const CAP_HEIGHT = 0.66
 const PRESS_SECONDS = 0.07
@@ -46,7 +49,14 @@ export const LAYERS = [
     id: 'plate',
     label: 'Positioning plate',
     lift: 8,
-    parts: ['plate', 'stabilizers', 'stabilizerWires', 'ledIndicator', 'ledIndicatorLights'],
+    parts: [
+      'plate',
+      'stabilizers',
+      'stabilizerWires',
+      'ledIndicator',
+      'ledIndicatorFace',
+      'ledIndicatorLights',
+    ],
   },
   { id: 'plateFoam', label: 'Plate foam', lift: 6.2, parts: ['plateFoam'] },
   { id: 'pcbFoam', label: 'PCB foam', lift: 4.6, parts: ['pcbFoam'] },
@@ -132,7 +142,7 @@ export class KeyboardRig {
     // Parts move into layers below, so work on a copy of the loader's cached scene.
     const nodes = keyboard.scene.clone()
 
-    this.tilted.position.y = DESK_OFFSET
+    this.tilted.position.y = DESK_OFFSET + FOOT_HEIGHT
     this.tilted.rotation.x = TILT
     this.root.add(this.tilted)
 
@@ -141,8 +151,9 @@ export class KeyboardRig {
     const knobMaterial = createKnobMaterial()
     const overrides: Record<string, Material> = {
       upperLid: caseMaterial,
-      lowerLid: caseMaterial,
+      lowerLid: createLowerLidMaterial(),
       rearLight: caseMaterial,
+      ledIndicator: caseMaterial,
       plate: plateMaterial,
       knob: knobMaterial,
     }
@@ -168,7 +179,12 @@ export class KeyboardRig {
         const mesh = nodes.getObjectByName(part)
         if (!mesh) throw new Error(`Model is missing part: ${part}`)
         const material = overrides[part]
-        if (material) (mesh as Mesh).material = material
+        if (material) {
+          // A part with several material slots loads as a group of meshes.
+          mesh.traverse((child) => {
+            if ((child as Mesh).isMesh) (child as Mesh).material = material
+          })
+        }
         group.add(mesh)
       }
     }

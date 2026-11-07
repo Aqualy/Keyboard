@@ -3,6 +3,7 @@ import {
   canvasImage,
   choose,
   openConfigurator,
+  openFolder,
   sameImage,
   stageBox,
   trackErrors,
@@ -32,7 +33,7 @@ test('every option group changes the rendered board', async ({ page }) => {
   await openConfigurator(page)
   const changes: [string, string][] = [
     ['Colourway', 'Beet'],
-    ['Case', 'Sky'],
+    ['Case colour', 'Sky'],
     ['Profile', 'SA'],
     ['Profile', 'XDA'],
     ['Plate', 'Brass'],
@@ -70,6 +71,7 @@ test('a shared URL restores the build after reload', async ({ page }) => {
   await expect(page.locator('.summary p')).toHaveText('Beet')
   await page.reload()
   await expect(page.locator('.app')).toHaveAttribute('data-ready', 'true')
+  await openFolder(page, 'Keycaps')
   await expect(
     page.getByRole('group', { name: 'Profile' }).getByRole('radio', { name: 'SA' }),
   ).toBeChecked()
@@ -79,6 +81,35 @@ test('a corrupt URL falls back to the default build', async ({ page }) => {
   const errors = trackErrors(page)
   await openConfigurator(page, '?case=%3Cscript%3E&profile=nope&plate=%')
   await expect(page.locator('.summary p')).toHaveText('White')
+  expect(errors).toEqual([])
+})
+
+test('an open folder lifts its part out of the board, and Case puts it back', async ({ page }) => {
+  await openConfigurator(page)
+  let previous = await canvasImage(page)
+  for (const folder of ['Switches', 'Plate', 'Keycaps', 'Case']) {
+    await openFolder(page, folder)
+    await waitForStillCanvas(page)
+    const next = await canvasImage(page)
+    expect(sameImage(next, previous), folder).toBe(false)
+    previous = next
+  }
+})
+
+test('an isolated part survives the exploded view and the typing test', async ({ page }) => {
+  const errors = trackErrors(page)
+  await openConfigurator(page)
+  await openFolder(page, 'Switches')
+  await page.getByRole('button', { name: 'Explode keyboard' }).click()
+  await waitForStillCanvas(page)
+  await page.getByRole('button', { name: 'Assemble keyboard' }).click()
+  await waitForStillCanvas(page)
+  await page.getByRole('button', { name: 'Test' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('button', { name: /^Switches / })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  )
   expect(errors).toEqual([])
 })
 

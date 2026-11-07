@@ -28,11 +28,12 @@ test('tapping a part in the exploded view names it', async ({ page }) => {
   await expect(page.locator('.part-label')).toBeVisible()
 })
 
-test('option cards can be reached by scrolling them sideways', async ({ page, viewport }) => {
-  test.skip((viewport?.height ?? 0) < 500, 'Landscape stacks its cards vertically')
+test('folders open with a tap', async ({ page }) => {
   await openConfigurator(page)
-  const lastPill = page.getByRole('group', { name: 'Knob' }).getByRole('radio', { name: 'Brass' })
-  await lastPill.scrollIntoViewIfNeeded()
-  await lastPill.tap({ force: true })
-  await expect(page).toHaveURL(/knob=brass/)
+  await page.locator('.folder-tab', { hasText: 'Plate' }).tap()
+  await page
+    .getByRole('group', { name: 'Plate' })
+    .getByRole('radio', { name: 'Brass' })
+    .tap({ force: true })
+  await expect(page).toHaveURL(/plate=brass/)
 })

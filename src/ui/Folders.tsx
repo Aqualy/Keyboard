@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import {
   CASE_COLOURS,
   COLOURWAYS,
@@ -12,7 +12,8 @@ import {
   byId,
 } from '../data/options'
 import { matchColourway, useConfig } from '../state/config'
-import { Card, Pills, Specs, Swatches } from './controls'
+import { SECTIONS, useStage, type Section } from '../state/stage'
+import { Pills, Specs, Swatches } from './controls'
 
 const ZONES = [
   { id: 'alpha', name: 'Alphas' },
@@ -23,12 +24,50 @@ const ZONES = [
 
 type Zone = (typeof ZONES)[number]['id']
 
-function ColourwayCard() {
+const TITLES: Record<Section, string> = {
+  case: 'Case',
+  keycaps: 'Keycaps',
+  switches: 'Switches',
+  plate: 'Plate',
+}
+
+interface FolderProps {
+  id: Section
+  /** The current choice, shown on the tab so the whole build reads without opening folders. */
+  value: string
+  children: ReactNode
+}
+
+/** A tab along the bottom edge. Only one folder is open, and its part stays solid on the board. */
+function Folder({ id, value, children }: FolderProps) {
+  const open = useStage((state) => state.section === id)
+  const setSection = useStage((state) => state.setSection)
+  const bodyId = useId()
+  return (
+    <div className="folder" data-open={open}>
+      <button
+        type="button"
+        className="folder-tab"
+        aria-expanded={open}
+        aria-controls={bodyId}
+        onClick={() => setSection(id)}
+      >
+        <span className="folder-title">{TITLES[id]}</span>{' '}
+        <span className="folder-value">{value}</span>
+      </button>
+      <div id={bodyId} className="folder-body" role="region" aria-label={TITLES[id]} hidden={!open}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function CaseFolder() {
   const config = useConfig((state) => state.config)
   const update = useConfig((state) => state.update)
   const applyColourway = useConfig((state) => state.applyColourway)
   return (
-    <Card title="Colourway">
+    <Folder id="case" value={byId(CASE_COLOURS, config.case).name}>
       <Pills
         label="Colourway"
         options={COLOURWAYS}
@@ -36,21 +75,27 @@ function ColourwayCard() {
         onChange={applyColourway}
       />
       <Swatches
-        label="Case"
+        label="Case colour"
         options={CASE_COLOURS}
         value={config.case}
         onChange={(id) => update({ case: id })}
       />
-    </Card>
+      <Pills
+        label="Knob"
+        options={KNOBS}
+        value={config.knob}
+        onChange={(id) => update({ knob: id })}
+      />
+    </Folder>
   )
 }
 
-function KeycapsCard() {
+function KeycapsFolder() {
   const config = useConfig((state) => state.config)
   const update = useConfig((state) => state.update)
   const [zone, setZone] = useState<Zone>('alpha')
   return (
-    <Card title="Keycaps">
+    <Folder id="keycaps" value={byId(PROFILES, config.profile).name}>
       <Pills
         label="Profile"
         options={PROFILES}
@@ -73,15 +118,15 @@ function KeycapsCard() {
           onChange={(id) => update({ [zone]: id })}
         />
       )}
-    </Card>
+    </Folder>
   )
 }
 
-function SwitchCard() {
+function SwitchesFolder() {
   const selected = useConfig((state) => byId(SWITCHES, state.config.switch))
   const update = useConfig((state) => state.update)
   return (
-    <Card title="Switch">
+    <Folder id="switches" value={selected.name}>
       <Pills
         label="Type"
         options={SWITCH_TYPES}
@@ -98,39 +143,40 @@ function SwitchCard() {
         onChange={(id) => update({ switch: id })}
       />
       <Specs rows={selected.specs} />
-    </Card>
+    </Folder>
   )
 }
 
-function PlateKnobCard() {
-  const config = useConfig((state) => state.config)
+function PlateFolder() {
+  const plate = useConfig((state) => byId(PLATES, state.config.plate))
   const update = useConfig((state) => state.update)
   return (
-    <Card title="Plate and knob">
+    <Folder id="plate" value={plate.name}>
       <Pills
         label="Plate"
         options={PLATES}
-        value={config.plate}
+        value={plate.id}
         onChange={(id) => update({ plate: id })}
       />
-      <Specs rows={byId(PLATES, config.plate).specs} />
-      <Pills
-        label="Knob"
-        options={KNOBS}
-        value={config.knob}
-        onChange={(id) => update({ knob: id })}
-      />
-    </Card>
+      <Specs rows={plate.specs} />
+    </Folder>
   )
 }
 
-export function Cards() {
+const FOLDERS: Record<Section, () => ReactNode> = {
+  case: CaseFolder,
+  keycaps: KeycapsFolder,
+  switches: SwitchesFolder,
+  plate: PlateFolder,
+}
+
+export function Folders() {
   return (
-    <div className="cards">
-      <ColourwayCard />
-      <KeycapsCard />
-      <SwitchCard />
-      <PlateKnobCard />
+    <div className="folders">
+      {SECTIONS.map((id) => {
+        const Content = FOLDERS[id]
+        return <Content key={id} />
+      })}
     </div>
   )
 }

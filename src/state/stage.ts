@@ -2,6 +2,10 @@ import { create } from 'zustand'
 
 export type StageMode = 'configure' | 'exploded' | 'test'
 
+/** The open folder in the configurator. One part of the keyboard is edited at a time. */
+export const SECTIONS = ['case', 'keycaps', 'switches', 'plate'] as const
+export type Section = (typeof SECTIONS)[number]
+
 export interface PartHover {
   label: string
   x: number
@@ -10,6 +14,7 @@ export interface PartHover {
 
 interface StageStore {
   mode: StageMode
+  section: Section
   ready: boolean
   soundOn: boolean
   /** Set after the first orbit, which retires the 360° hint. */
@@ -21,6 +26,7 @@ interface StageStore {
   knobActive: boolean
   setKnobActive: (knobActive: boolean) => void
   setMode: (mode: StageMode) => void
+  setSection: (section: Section) => void
   setReady: () => void
   toggleSound: () => void
   markOrbited: () => void
@@ -30,6 +36,7 @@ interface StageStore {
 
 export const useStage = create<StageStore>((set) => ({
   mode: 'configure',
+  section: 'case',
   ready: false,
   soundOn: true,
   hasOrbited: false,
@@ -38,6 +45,7 @@ export const useStage = create<StageStore>((set) => ({
   knobActive: false,
   setKnobActive: (knobActive) => set({ knobActive }),
   setMode: (mode) => set({ mode, hoveredPart: null }),
+  setSection: (section) => set({ section }),
   setReady: () => set({ ready: true }),
   toggleSound: () => set((state) => ({ soundOn: !state.soundOn })),
   markOrbited: () => set({ hasOrbited: true }),

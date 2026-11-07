@@ -34,8 +34,34 @@ export async function waitForStillCanvas(page: Page) {
   throw new Error('The canvas never stopped changing')
 }
 
-/** Picks a radio by name inside one option group. */
+/** The folder each option group lives in. */
+const FOLDER_OF: Record<string, string> = {
+  Colourway: 'Case',
+  'Case colour': 'Case',
+  Knob: 'Case',
+  Profile: 'Keycaps',
+  Colour: 'Keycaps',
+  'Alphas colour': 'Keycaps',
+  'Mods colour': 'Keycaps',
+  'Accents colour': 'Keycaps',
+  'Legend colour': 'Keycaps',
+  Type: 'Switches',
+  Switch: 'Switches',
+  Plate: 'Plate',
+}
+
+/** Opens a configurator folder by its tab. */
+export async function openFolder(page: Page, folder: string) {
+  const tab = page.locator('.folder-tab', { has: page.getByText(folder, { exact: true }) })
+  await tab.click()
+  await expect(tab).toHaveAttribute('aria-expanded', 'true')
+}
+
+/** Picks a radio by name inside one option group, opening its folder first. */
 export async function choose(page: Page, group: string, option: string) {
+  const folder = FOLDER_OF[group]
+  if (!folder) throw new Error(`No folder known for group: ${group}`)
+  await openFolder(page, folder)
   const fieldset = page.getByRole('group', { name: group, exact: true })
   await fieldset.getByRole('radio', { name: option, exact: true }).check({ force: true })
 }

@@ -10,6 +10,7 @@ import { CameraRig } from './CameraRig'
 import { ConfigSync } from './ConfigSync'
 import { Interaction } from './Interaction'
 import { KeyboardRig } from './KeyboardRig'
+import { arrangementFor } from './layers'
 import { createLegendTexture, legendFontReady } from './legends'
 
 const base = import.meta.env.BASE_URL
@@ -57,13 +58,15 @@ function Keyboard() {
     useStage.getState().setReady()
   }, [environment, scene, rig])
 
-  useEffect(
-    () =>
-      useStage.subscribe((state, previous) => {
-        if (state.mode !== previous.mode) rig.setExploded(state.mode === 'exploded')
-      }),
-    [rig],
-  )
+  useEffect(() => {
+    const { mode, section } = useStage.getState()
+    rig.arrange(arrangementFor(mode, section))
+    return useStage.subscribe((state, previous) => {
+      if (state.mode !== previous.mode || state.section !== previous.section) {
+        rig.arrange(arrangementFor(state.mode, state.section))
+      }
+    })
+  }, [rig])
 
   return (
     <>

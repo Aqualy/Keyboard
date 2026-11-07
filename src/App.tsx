@@ -3,7 +3,7 @@ import { COLOURWAYS } from './data/options'
 import { matchColourway, useConfig } from './state/config'
 import { useStage } from './state/stage'
 import { TypingTest } from './test/TypingTest'
-import { Cards } from './ui/Cards'
+import { Folders } from './ui/Folders'
 import { ArrowIcon } from './ui/icons'
 import { OrbitHint, PartLabel, StageTools } from './ui/StageOverlay'
 
@@ -89,7 +89,7 @@ export default function App() {
       </div>
       <div className="panel">
         <Summary />
-        <Cards />
+        <Folders />
       </div>
     </main>
   )

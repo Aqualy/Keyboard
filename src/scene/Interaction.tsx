@@ -5,7 +5,8 @@ import { useStage } from '../state/stage'
 import { codeForCharacter } from '../test/typing'
 import { createKeyTracker, shouldPressKey } from './keyInput'
 import { announceKeyTap, SOFT_KEY_EVENT } from './keyTap'
-import { LAYERS, type KeyboardRig } from './KeyboardRig'
+import type { KeyboardRig } from './KeyboardRig'
+import { LAYERS } from './layers'
 
 const DRAG_CANCEL_PIXELS = 6
 const KNOB_RADIANS_PER_PIXEL = 0.012

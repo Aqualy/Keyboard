@@ -15,6 +15,7 @@ import type { GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import { KEYS, keycapMeshName, LAYOUT, type KeyDefinition } from '../data/layout'
 import { motion } from '../motion'
 import type { ProfileId } from '../data/options'
+import { LAYERS, liftsFor, type Arrangement, type LayerId } from './layers'
 import {
   createCaseMaterial,
   createKeycapMaterial,
@@ -38,39 +39,6 @@ const FLEX_SECONDS = 0.4
 const FLEX_DEPTH = 0.06
 
 const ZONE_WEIGHTS = { alpha: [1, 0, 0], mod: [0, 1, 0], accent: [0, 0, 1] } as const
-
-/** Stacked in the order of the GMK67 assembly diagram, top first. */
-export const LAYERS = [
-  { id: 'keycaps', label: 'Keycaps', lift: 19, parts: [] },
-  { id: 'switches', label: 'Switches', lift: 15.5, parts: [] },
-  { id: 'knob', label: 'Multimedia knob', lift: 13, parts: ['knob'] },
-  { id: 'upperLid', label: 'Upper lid', lift: 10.5, parts: ['upperLid'] },
-  {
-    id: 'plate',
-    label: 'Positioning plate',
-    lift: 8,
-    parts: [
-      'plate',
-      'stabilizers',
-      'stabilizerWires',
-      'ledIndicator',
-      'ledIndicatorFace',
-      'ledIndicatorLights',
-    ],
-  },
-  { id: 'plateFoam', label: 'Plate foam', lift: 6.2, parts: ['plateFoam'] },
-  { id: 'pcbFoam', label: 'PCB foam', lift: 4.6, parts: ['pcbFoam'] },
-  { id: 'pcb', label: 'PCB', lift: 3, parts: ['pcb', 'screws'] },
-  { id: 'foamBase', label: 'Foam base', lift: 1.2, parts: ['foamBase'] },
-  {
-    id: 'lowerLid',
-    label: 'Lower lid',
-    lift: 0,
-    parts: ['lowerLid', 'gasketStrips', 'feet', 'rearDark', 'rearLight'],
-  },
-] as const
-
-export type LayerId = (typeof LAYERS)[number]['id']
 
 interface InstanceSlot {
   mesh: InstancedMesh
@@ -135,7 +103,7 @@ export class KeyboardRig {
   private readonly capSets = new Map<ProfileId, Group>()
   private readonly keys = new Map<string, KeyState>()
   private activeProfile: ProfileId = 'cherry'
-  private exploded = false
+  private lifts = liftsFor('assembled')
 
   constructor(assets: RigAssets) {
     const { keyboard, keycaps, switchModel, shadow, legends } = assets
@@ -272,7 +240,7 @@ export class KeyboardRig {
   changeProfile(profile: ProfileId) {
     if (profile === this.activeProfile) return
     const layer = this.layers.get('keycaps')!
-    const rest = this.exploded ? this.liftOf('keycaps') : 0
+    const rest = this.lifts.get('keycaps') ?? 0
     gsap.killTweensOf(layer.position)
     gsap
       .timeline()
@@ -281,25 +249,23 @@ export class KeyboardRig {
       .to(layer.position, { y: rest, duration: motion(0.42), ease: 'bounce.out' })
   }
 
-  setExploded(exploded: boolean) {
-    this.exploded = exploded
-    const duration = motion(exploded ? 1.1 : 0.9)
+  /** Moves the layers into place. Any spread lays the board flat so the gaps read clearly. */
+  arrange(arrangement: Arrangement) {
+    const spread = arrangement !== 'assembled'
+    this.lifts = liftsFor(arrangement)
+    const duration = motion(spread ? 1.1 : 0.9)
     const ease = 'power3.inOut'
     LAYERS.forEach((layer, index) => {
       gsap.to(this.layers.get(layer.id)!.position, {
-        y: exploded ? layer.lift : 0,
+        y: this.lifts.get(layer.id)!,
         duration,
         ease,
         delay: motion(index * 0.03),
         overwrite: true,
       })
     })
-    gsap.to(this.tilted.rotation, { x: exploded ? 0 : TILT, duration, ease, overwrite: true })
-    gsap.to(uniforms.shadow, { value: exploded ? 0.45 : 1, duration, overwrite: true })
-  }
-
-  private liftOf(id: LayerId) {
-    return LAYERS.find((layer) => layer.id === id)?.lift ?? 0
+    gsap.to(this.tilted.rotation, { x: spread ? 0 : TILT, duration, ease, overwrite: true })
+    gsap.to(uniforms.shadow, { value: spread ? 0.45 : 1, duration, overwrite: true })
   }
 
   /** Eases the board in once it has loaded. */

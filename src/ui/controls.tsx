@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react'
+import { useId } from 'react'
 import type { SpecRow, Swatch } from '../data/options'
 
 interface Option {
@@ -69,13 +69,5 @@ export function Specs({ rows }: { rows: readonly SpecRow[] }) {
         </div>
       ))}
     </dl>
-  )
-}
-
-export function Card({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="card" aria-label={title}>
-      {children}
-    </section>
   )
 }

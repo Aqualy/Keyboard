@@ -14,7 +14,7 @@ export interface KeyDefinition {
   homing: boolean
 }
 
-export const LAYOUT = layout as typeof layout & { keys: KeyDefinition[] }
+export const LAYOUT = layout as unknown as Omit<typeof layout, 'keys'> & { keys: KeyDefinition[] }
 export const KEYS = LAYOUT.keys
 export const KEY_BY_CODE = new Map(KEYS.map((key) => [key.code, key]))
 

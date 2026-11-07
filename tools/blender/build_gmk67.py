@@ -28,6 +28,14 @@ TILT = math.radians(CASE["tiltDegrees"])
 KEY_AREA_W = LAYOUT["columns"] * PITCH
 KEY_AREA_D = LAYOUT["rows"] * PITCH
 
+SEAM_START = CASE["seamStartY"]
+SEAM_END = CASE["seamEndY"]
+UPPER_WALL = 0.34
+LOWER_STEP = 0.03
+TRAY_INSET = 0.5
+PORT_RECESS = 0.14
+USB_DEPTH = 0.2
+
 
 # Scene helpers ---------------------------------------------------------------
 
@@ -162,6 +170,36 @@ def smooth_shade(obj, angle=38):
     obj.data.set_sharp_from_angle(angle=math.radians(angle))
 
 
+def merge_flat_faces(obj):
+    """Boolean cuts leave sliver triangles whose stray normals streak across flat walls."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0005)
+    bmesh.ops.dissolve_degenerate(bm, dist=0.0005, edges=bm.edges)
+    bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(1), verts=bm.verts, edges=bm.edges)
+    bm.to_mesh(obj.data)
+    bm.free()
+
+
+def assert_outward(obj):
+    """Browsers hide back faces, so an inside-out part vanishes there but not in Blender."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    volume = bm.calc_volume(signed=True)
+    bm.free()
+    if volume <= 0:
+        raise RuntimeError(f"{obj.name} is inside out (volume {volume:.2f})")
+
+
+def flatten_large_faces(obj):
+    """Stops big flat panels picking up shading from the small bevels around them."""
+    mod = obj.modifiers.new("weighted", "WEIGHTED_NORMAL")
+    mod.mode = "FACE_AREA"
+    mod.weight = 100
+    mod.keep_sharp = True
+    bake(obj)
+
+
 def key_cutter(name, half=0.7):
     bm = bmesh.new()
     for key in KEYS:
@@ -174,48 +212,24 @@ def stab_offset(key):
 
 
 def desk_z(y):
-    """Underside of the case: wedge with a concave swoop toward the front."""
-    front = -CASE["depth"] / 2
-    line = CASE["frontBottomZ"] - (y - front) * math.tan(TILT)
-    lift = max(0.0, (-1.2 - y) / (-1.2 - front)) ** 2 * 0.55
-    return line + lift
+    """Underside of the case, a straight wedge resting on the desk."""
+    return CASE["frontBottomZ"] - (y + CASE["depth"] / 2) * math.tan(TILT)
 
 
-# Keyboard ------------------------------------------------------------------------
+def rear_wall():
+    """Y of the lower lid's back wall, which sits just inside the upper lid."""
+    return CASE["depth"] / 2 - LOWER_STEP
 
 
-def case_outline(segments=8):
-    return rounded_outline(CASE["width"] / 2, CASE["depth"] / 2, CASE["cornerRadius"], segments)
+def seam_z(y):
+    """The S-curve between the lids. The upper lid wraps the front down to the desk."""
+    t = min(max((y - SEAM_START) / (SEAM_END - SEAM_START), 0.0), 1.0)
+    ease = t * t * t * (t * (6 * t - 15) + 10)
+    return desk_z(y) + (CASE["partingZ"] - desk_z(y)) * ease
 
 
-def opening_cutter(z0, z1, name="opening"):
-    """Key well, leaving material around the knob in the top right corner."""
-    hw = KEY_AREA_W / 2 + 0.1
-    hd = KEY_AREA_D / 2 + 0.1
-    notch_x = LAYOUT["knob"]["x"] - PITCH / 2 + 0.04
-    notch_y = LAYOUT["knob"]["y"] - PITCH / 2 + 0.04
-    outline = [(-hw, -hd), (hw, -hd), (hw, notch_y), (notch_x, notch_y), (notch_x, hd), (-hw, hd)]
-    return prism(name, outline, z0, z1)
-
-
-def build_upper_lid(mat):
-    lid = prism("upperLid", case_outline(), CASE["partingZ"], CASE["topZ"], mat)
-    boolean(lid, opening_cutter(-3, 3))
-    bm = bmesh.new()
-    add_cylinder(bm, LAYOUT["knob"]["x"], LAYOUT["knob"]["y"], 0.42, -3, 3, 24)
-    boolean(lid, to_object("knobHole", bm))
-    soften(lid, 0.07, 3)
-    return lid
-
-
-def build_lower_lid(mat):
-    outline = case_outline()
-    lid = prism("lowerLid", outline, -5, CASE["partingZ"], mat)
-
-    # Side profile, extruded across X and intersected with the plan shape.
-    half = CASE["depth"] / 2 + 0.2
-    samples = [(-half + 2 * half * i / 40) for i in range(41)]
-    profile = [(y, desk_z(y)) for y in samples] + [(half, 1.0), (-half, 1.0)]
+def extruded_profile(name, profile):
+    """Extrudes a (y, z) polygon across the whole width of the board."""
     bm = bmesh.new()
     left = [bm.verts.new((-20, y, z)) for y, z in profile]
     right = [bm.verts.new((20, y, z)) for y, z in profile]
@@ -225,50 +239,109 @@ def build_lower_lid(mat):
     for i in range(count):
         j = (i + 1) % count
         bm.faces.new([left[i], left[j], right[j], right[i]])
-    boolean(lid, to_object("profile", bm), "INTERSECT")
+    # The polygon can arrive in either direction, and an inverted cutter inverts the result.
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return to_object(name, bm)
 
-    wall = 0.34
-    cavity = prism(
-        "cavity",
-        rounded_outline(CASE["width"] / 2 - wall, CASE["depth"] / 2 - wall, 0.2, 4),
-        -1.12,
-        1,
+
+# Keyboard ------------------------------------------------------------------------
+
+
+def case_outline(segments=10, inset=0.0):
+    return rounded_outline(
+        CASE["width"] / 2 - inset,
+        CASE["depth"] / 2 - inset,
+        CASE["cornerRadius"] - inset,
+        segments,
     )
-    boolean(lid, cavity)
 
-    # Recessed port panel on the back edge.
+
+def opening_cutter(z0, z1, name="opening"):
+    """Key well, leaving a raised pad under the knob in the top right corner."""
+    hw = KEY_AREA_W / 2 + 0.1
+    hd = KEY_AREA_D / 2 + 0.1
+    notch_x = 7 * PITCH + 0.04
+    notch_y = 1.5 * PITCH + 0.04
+    outline = [(-hw, -hd), (hw, -hd), (hw, notch_y), (notch_x, notch_y), (notch_x, hd), (-hw, hd)]
+    return prism(name, outline, z0, z1)
+
+
+def build_upper_lid(mat):
+    lid = prism("upperLid", case_outline(), -6, CASE["topZ"], mat)
+    soften(lid, 0.2, 6, 35, 34)
+
+    half = CASE["depth"] / 2 + 0.2
+    samples = [-half + 2 * half * i / 60 for i in range(61)]
+    profile = [(y, seam_z(y)) for y in samples] + [(half, 2.0), (-half, 2.0)]
+    boolean(lid, extruded_profile("upperProfile", profile), "INTERSECT")
+
+    boolean(lid, opening_cutter(-3, 3))
+    boolean(lid, prism("upperHollow", case_outline(4, UPPER_WALL), -6, 0))
     bm = bmesh.new()
-    back = CASE["depth"] / 2
-    add_box(bm, 6.6, 15.1, back - 0.12, back + 1, -1.9, -0.72)
+    add_cylinder(bm, LAYOUT["knob"]["x"], LAYOUT["knob"]["y"], 0.42, -3, 3, 24)
+    boolean(lid, to_object("knobHole", bm))
+    soften(lid, 0.035, 2, 40, 34)
+    flatten_large_faces(lid)
+    assert_outward(lid)
+    return lid
+
+
+def build_lower_lid(mat):
+    half = CASE["depth"] / 2 + 0.2
+
+    # The visible wedge, sitting just inside the upper lid behind the seam.
+    lid = prism("lowerLid", case_outline(10, LOWER_STEP), -6, 2, mat)
+    samples = [SEAM_START + (half - SEAM_START) * i / 40 for i in range(41)]
+    # Overlaps the upper lid slightly, so no crack shows along the seam.
+    top = [(y, seam_z(y) + 0.02) for y in samples]
+    bottom = [(y, desk_z(y)) for y in reversed(samples)]
+    boolean(lid, extruded_profile("wedge", bottom + top), "INTERSECT")
+
+    # The tray that carries the stack, hidden inside the upper lid at the front.
+    tray = prism("tray", case_outline(4, UPPER_WALL + 0.02), -6, CASE["partingZ"], mat)
+    samples = [-half + 2 * half * i / 8 for i in range(9)]
+    floor = [(y, desk_z(y)) for y in samples] + [(half, 1.0), (-half, 1.0)]
+    boolean(tray, extruded_profile("trayFloor", floor), "INTERSECT")
+    boolean(lid, tray, "UNION")
+
+    boolean(lid, prism("cavity", case_outline(4, TRAY_INSET), -1.12, 1))
+
+    # Recessed port panel on the back wall, toward the keyboard's left.
+    wall = rear_wall()
+    bm = bmesh.new()
+    add_box(bm, -15.1, -6.2, wall - PORT_RECESS, wall + 1, -1.86, -0.72)
     boolean(lid, to_object("portRecess", bm))
+    # A shallow pocket, so the opening never reaches the hollow inside of the case.
     bm = bmesh.new()
-    add_box(bm, 13.1, 14.2, back - 1.2, back, -1.5, -1.02)
+    add_box(bm, -14.25, -13.15, wall - PORT_RECESS - USB_DEPTH, wall, -1.48, -1.02)
     boolean(lid, to_object("usbPort", bm))
-    bm = bmesh.new()
-    add_box(bm, 7.0, 9.5, back - 0.6, back, -1.68, -0.95)
-    boolean(lid, to_object("receiverSlot", bm))
-    soften(lid, 0.07, 3, 32, 34)
+
+    # No bevel here. Its small faces would smear shading across these large flat walls.
+    merge_flat_faces(lid)
+    smooth_shade(lid, 30)
+    assert_outward(lid)
     return lid
 
 
 def build_rear_details(mat_dark, mat_case):
-    back = CASE["depth"] / 2
+    panel = rear_wall() - PORT_RECESS
     bm = bmesh.new()
-    add_box(bm, 13.25, 14.05, back - 0.5, back - 0.16, -1.34, -1.17)  # USB-C tongue
+    add_box(bm, -14.25, -13.15, panel - USB_DEPTH, panel - USB_DEPTH + 0.01, -1.48, -1.02)  # USB back
+    add_box(bm, -14.0, -13.4, panel - USB_DEPTH, panel - 0.05, -1.31, -1.19)  # USB-C tongue
     dark = to_object("rearDark", bm, mat_dark)
 
     bm = bmesh.new()
-    add_box(bm, 7.15, 9.35, back - 0.34, back - 0.06, -1.58, -1.05)  # 2.4G receiver
-    add_box(bm, 10.3, 11.1, back - 0.2, back - 0.04, -1.42, -1.14)  # mode switch
-    add_box(bm, 11.75, 12.45, back - 0.2, back - 0.04, -1.42, -1.14)  # OS switch
+    add_box(bm, -8.85, -6.75, panel - 0.02, panel + 0.07, -1.56, -1.05)  # 2.4G receiver
+    add_box(bm, -11.0, -10.2, panel - 0.1, panel + 0.05, -1.42, -1.14)  # mode switch
+    add_box(bm, -12.5, -11.8, panel - 0.1, panel + 0.05, -1.42, -1.14)  # OS switch
     light = to_object("rearLight", bm, mat_case)
     soften(light, 0.03, 2)
     return [dark, light]
 
 
 def build_plate(mat):
-    half_w = KEY_AREA_W / 2 + 0.75
-    half_d = KEY_AREA_D / 2 + 0.75
+    half_w = KEY_AREA_W / 2 + 0.6
+    half_d = KEY_AREA_D / 2 + 0.6
     plate = prism("plate", rounded_outline(half_w, half_d, 0.3, 4), -0.15, 0, mat)
     boolean(plate, key_cutter("plateCut"))
 
@@ -285,10 +358,10 @@ def build_plate(mat):
     bm = bmesh.new()
     add_box(
         bm,
-        LAYOUT["indicator"]["x"] - 0.4,
-        LAYOUT["indicator"]["x"] + 0.4,
-        LAYOUT["indicator"]["y"] - 0.86,
-        LAYOUT["indicator"]["y"] + 0.86,
+        LAYOUT["indicator"]["x"] - LAYOUT["indicator"]["width"] / 2 - 0.03,
+        LAYOUT["indicator"]["x"] + LAYOUT["indicator"]["width"] / 2 + 0.03,
+        LAYOUT["indicator"]["y"] - LAYOUT["indicator"]["depth"] / 2 - 0.03,
+        LAYOUT["indicator"]["y"] + LAYOUT["indicator"]["depth"] / 2 + 0.03,
         -1,
         1,
     )
@@ -297,8 +370,8 @@ def build_plate(mat):
 
 
 def build_foam(name, z0, z1, mat, holes=True):
-    half_w = KEY_AREA_W / 2 + 0.68
-    half_d = KEY_AREA_D / 2 + 0.68
+    half_w = KEY_AREA_W / 2 + 0.45
+    half_d = KEY_AREA_D / 2 + 0.45
     foam = prism(name, rounded_outline(half_w, half_d, 0.3, 3), z0, z1, mat)
     if holes:
         boolean(foam, key_cutter(f"{name}Cut", 0.76))
@@ -306,8 +379,8 @@ def build_foam(name, z0, z1, mat, holes=True):
 
 
 def build_pcb(mat, mat_gold):
-    half_w = KEY_AREA_W / 2 + 0.68
-    half_d = KEY_AREA_D / 2 + 0.68
+    half_w = KEY_AREA_W / 2 + 0.45
+    half_d = KEY_AREA_D / 2 + 0.45
     pcb = prism("pcb", rounded_outline(half_w, half_d, 0.3, 3), -0.66, -0.5, mat)
     bm = bmesh.new()
     for key in KEYS:
@@ -365,23 +438,32 @@ def build_screws(mat):
     return screws
 
 
-def build_indicator(mat_body, mat_light):
+def build_indicator(mat_body, mat_face, mat_light):
+    """A slim pillar standing in the gap beside the arrow keys."""
     x, y = LAYOUT["indicator"]["x"], LAYOUT["indicator"]["y"]
+    hw = LAYOUT["indicator"]["width"] / 2
+    hd = LAYOUT["indicator"]["depth"] / 2
+    top = 0.95
     bm = bmesh.new()
-    add_box(bm, x - 0.36, x + 0.36, y - 0.82, y + 0.82, -0.3, 0.42)
+    add_box(bm, x - hw, x + hw, y - hd, y + hd, -0.3, top)
     body = to_object("ledIndicator", bm, mat_body)
-    soften(body, 0.04, 2)
+    soften(body, 0.05, 2)
+
     bm = bmesh.new()
-    add_cylinder(bm, x, y + 0.42, 0.07, 0.42, 0.43, 10)
-    add_cylinder(bm, x, y - 0.42, 0.07, 0.42, 0.43, 10)
-    return [body, to_object("ledIndicatorLights", bm, mat_light)]
+    add_box(bm, x - hw + 0.09, x + hw - 0.09, y - hd + 0.09, y + hd - 0.09, top - 0.02, top + 0.012)
+    face = to_object("ledIndicatorFace", bm, mat_face)
+
+    bm = bmesh.new()
+    add_cylinder(bm, x, y + 0.42, 0.055, top + 0.012, top + 0.02, 10)
+    add_cylinder(bm, x, y - 0.42, 0.055, top + 0.012, top + 0.02, 10)
+    return [body, face, to_object("ledIndicatorLights", bm, mat_light)]
 
 
 def build_knob(mat):
     x, y = LAYOUT["knob"]["x"], LAYOUT["knob"]["y"]
     bm = bmesh.new()
-    add_cylinder(bm, 0, 0, 0.85, CASE["topZ"] + 0.06, CASE["topZ"] + 1.06, 56)
-    add_cylinder(bm, 0, 0, 0.34, -0.3, CASE["topZ"] + 0.06, 16)
+    add_cylinder(bm, 0, 0, 0.95, CASE["topZ"] + 0.05, CASE["topZ"] + 1.16, 64)
+    add_cylinder(bm, 0, 0, 0.34, -0.3, CASE["topZ"] + 0.05, 16)
     knob = to_object("knob", bm, mat)
     soften(knob, 0.09, 4, 40)
     # The origin sits on the rotation axis so the app can spin it.
@@ -391,15 +473,15 @@ def build_knob(mat):
 
 def build_gaskets(mat):
     bm = bmesh.new()
-    half_w = CASE["width"] / 2 - 0.34
-    half_d = CASE["depth"] / 2 - 0.34
+    half_w = CASE["width"] / 2 - TRAY_INSET
+    half_d = CASE["depth"] / 2 - TRAY_INSET
     for i in range(5):
         x = -13 + i * 6.5
-        add_box(bm, x - 1.1, x + 1.1, half_d - 0.14, half_d, -0.82, -0.16)
-        add_box(bm, x - 1.1, x + 1.1, -half_d, -half_d + 0.14, -0.82, -0.16)
+        add_box(bm, x - 1.1, x + 1.1, half_d - 0.1, half_d, -0.82, -0.3)
+        add_box(bm, x - 1.1, x + 1.1, -half_d, -half_d + 0.1, -0.82, -0.3)
     for y in (-3, 3):
-        add_box(bm, half_w - 0.14, half_w, y - 1, y + 1, -0.82, -0.16)
-        add_box(bm, -half_w, -half_w + 0.14, y - 1, y + 1, -0.82, -0.16)
+        add_box(bm, half_w - 0.1, half_w, y - 1, y + 1, -0.82, -0.3)
+        add_box(bm, -half_w, -half_w + 0.1, y - 1, y + 1, -0.82, -0.3)
     return to_object("gasketStrips", bm, mat)
 
 
@@ -407,11 +489,11 @@ def build_feet(mat):
     bm = bmesh.new()
     for x in (-13.5, 13.5):
         z = desk_z(4.6)
-        add_box(bm, x - 1.4, x + 1.4, 3.9, 5.3, z - 0.04, z + 0.2)
-    z = desk_z(-0.9)
-    add_box(bm, -14.5, 14.5, -1.1, -0.7, z - 0.04, z + 0.2)
-    feet = to_object("feet", bm, mat)
-    return feet
+        add_box(bm, x - 1.4, x + 1.4, 3.9, 5.3, z - 0.02, z + 0.2)
+    z = desk_z(-4.4)
+    for x in (-13.5, 13.5):
+        add_box(bm, x - 1.4, x + 1.4, -4.8, -4.0, z - 0.02, z + 0.2)
+    return to_object("feet", bm, mat)
 
 
 def build_shadow_plane(mat):
@@ -466,7 +548,7 @@ def build_keyboard():
         build_shadow_plane(shadow),
     ]
     parts += build_stabilizers(teal, wire)
-    parts += build_indicator(dark, led)
+    parts += build_indicator(lower, material("indicatorFace", (0.62, 0.64, 0.66), 0.7, 0.32), led)
     parts += build_rear_details(dark, lower)
     for part in parts:
         if part.name != "shadowPlane":
@@ -849,6 +931,21 @@ def preview():
     shoot("bare", (0, -2, 110), hide_caps=True)
     shoot("back", (25, 90, 22))
     shoot("side", (110, 0, 4))
+    shoot("corner", (70, -80, 34), target=(5, -2, 1))
+    shoot("rear-corner", (-62, 88, 30), target=(-5, 2, 1))
+    shoot("indicator", (20, -34, 26), target=(9, -3.6, 1))
+
+    # Tinted close-ups, since white hides problems in the case surfaces.
+    for name in ("case", "caseLower"):
+        bsdf = next(n for n in bpy.data.materials[name].node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+        bsdf.inputs["Base Color"].default_value = (0.3, 0.45, 0.7, 1)
+    bpy.data.worlds["world"].node_tree.nodes["Background"].inputs["Color"].default_value = (0.6, 0.6, 0.6, 1)
+    cam_data.lens = 90
+    shoot("close-ports", (-22, 42, 10), target=(-10, 6, 1.6))
+    shoot("close-rear-left", (-44, 34, 9), target=(-16, 6, 1.5))
+    shoot("close-rear-right", (44, 34, 9), target=(16, 6, 1.5))
+    shoot("close-front-right", (46, -34, 12), target=(16, -6, 1))
+    shoot("close-front-left", (-46, -34, 12), target=(-16, -6, 1))
 
 
 TASKS = {

@@ -4,21 +4,25 @@
   "columns": 16,
   "rows": 5,
   "knob": {
-    "x": 14.2875,
-    "y": 3.81
+    "x": 14.7066,
+    "y": 4.0005
   },
   "indicator": {
-    "x": 8.5725,
-    "y": -3.81
+    "x": 9.0488,
+    "y": -3.81,
+    "width": 0.72,
+    "depth": 1.8
   },
   "case": {
     "width": 32.5,
-    "depth": 12,
-    "cornerRadius": 0.32,
+    "depth": 11.65,
+    "cornerRadius": 0.5,
     "topZ": 0.55,
     "partingZ": -0.3,
-    "frontBottomZ": -1.45,
-    "tiltDegrees": 5.2
+    "frontBottomZ": -1.25,
+    "tiltDegrees": 5.2,
+    "seamStartY": -2,
+    "seamEndY": 4.4
   },
   "keys": [
     {
@@ -330,8 +334,8 @@
       "homing": false
     },
     {
-      "code": "PageUp",
-      "legend": ["PgUp"],
+      "code": "Delete",
+      "legend": ["Del"],
       "width": 1,
       "zone": "mod",
       "row": 1,
@@ -484,8 +488,8 @@
       "homing": false
     },
     {
-      "code": "PageDown",
-      "legend": ["PgDn"],
+      "code": "PageUp",
+      "legend": ["PgUp"],
       "width": 1,
       "zone": "mod",
       "row": 2,
@@ -638,8 +642,8 @@
       "homing": false
     },
     {
-      "code": "End",
-      "legend": ["End"],
+      "code": "PageDown",
+      "legend": ["PgDn"],
       "width": 1,
       "zone": "mod",
       "row": 3,
@@ -695,10 +699,10 @@
     {
       "code": "AltRight",
       "legend": ["Alt"],
-      "width": 1,
+      "width": 1.25,
       "zone": "mod",
       "row": 4,
-      "x": 4.7625,
+      "x": 5.0006,
       "y": -3.81,
       "stabilized": false,
       "homing": false
@@ -706,10 +710,10 @@
     {
       "code": "Fn",
       "legend": ["Fn"],
-      "width": 1,
+      "width": 1.25,
       "zone": "mod",
       "row": 4,
-      "x": 6.6675,
+      "x": 7.3819,
       "y": -3.81,
       "stabilized": false,
       "homing": false

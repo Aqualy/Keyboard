@@ -6,6 +6,7 @@ import {
   Fn,
   mix,
   positionGeometry,
+  smoothstep,
   texture,
   uniform,
   vec2,
@@ -64,6 +65,29 @@ export function createKeycapMaterial(legends: CanvasTexture) {
 export function createCaseMaterial() {
   const material = new MeshStandardNodeMaterial({ roughness: 0.44, metalness: 0.08 })
   material.colorNode = uniforms.case
+  return material
+}
+
+/** Depth below the lid seam, in the same S-curve the Blender script cuts. */
+const belowSeam = Fn(() => {
+  const { depth, frontBottomZ, partingZ, seamEndY, seamStartY, tiltDegrees } = LAYOUT.case
+  const y = positionGeometry.z.negate()
+  const desk = float(frontBottomZ).sub(
+    y.add(depth / 2).mul(Math.tan((tiltDegrees * Math.PI) / 180)),
+  )
+  const t = clamp(y.sub(seamStartY).div(seamEndY - seamStartY), 0, 1)
+  const ease = t
+    .mul(t)
+    .mul(t)
+    .mul(t.mul(t.mul(6).sub(15)).add(10))
+  return mix(desk, float(partingZ), ease).sub(positionGeometry.y)
+})
+
+export function createLowerLidMaterial() {
+  const material = createCaseMaterial()
+  // There are no real-time shadows, so the upper lid's shadow on this part is painted in.
+  const shade = smoothstep(0, 0.42, belowSeam()).mul(0.34).add(0.66)
+  material.colorNode = uniforms.case.mul(shade)
   return material
 }
 

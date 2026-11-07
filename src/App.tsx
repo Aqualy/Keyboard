@@ -5,6 +5,7 @@ import { isDark, useStage } from './state/stage'
 import { TypingTest } from './test/TypingTest'
 import { Folders } from './ui/Folders'
 import { ArrowIcon } from './ui/icons'
+import { SwitchCutaway } from './ui/SwitchCutaway'
 import { OrbitHint, PartLabel, StageTools, VolumeLabel } from './ui/StageOverlay'
 
 const Stage = lazy(() => import('./scene/Stage').then(({ Stage }) => ({ default: Stage })))
@@ -62,6 +63,9 @@ export default function App() {
   const mode = useStage((state) => state.mode)
   const ready = useStage((state) => state.ready)
   const dark = useStage(isDark)
+  const switchesOpen = useStage(
+    (state) => state.mode === 'configure' && state.section === 'switches',
+  )
   const knob = useStage((state) => state.knobHovered || state.knobActive)
   const supported = hasGraphicsSupport()
 
@@ -86,6 +90,7 @@ export default function App() {
             <StageTools />
             <PartLabel />
             <VolumeLabel />
+            {switchesOpen && <SwitchCutaway className="cutaway-stage" />}
           </>
         )}
         {mode === 'test' && <TypingTest />}

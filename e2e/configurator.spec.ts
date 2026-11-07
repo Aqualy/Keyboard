@@ -134,6 +134,17 @@ test('the lighting folder darkens the room and lights the board', async ({ page 
   expect(errors).toEqual([])
 })
 
+test('the switch cutaway presses along with the keyboard', async ({ page }) => {
+  await openConfigurator(page)
+  await openFolder(page, 'Switches')
+  const cutaway = page.locator('.cutaway:visible svg')
+  await expect(cutaway).toHaveAttribute('data-mechanism', 'linear')
+  await page.keyboard.down('KeyF')
+  await expect(cutaway).toHaveAttribute('data-pressed', 'true')
+  await page.keyboard.up('KeyF')
+  await expect(cutaway).toHaveAttribute('data-pressed', 'false')
+})
+
 test('the reactive effect lights a key when it is pressed', async ({ page }) => {
   const errors = trackErrors(page)
   await openConfigurator(page, '?rgb=reactive')

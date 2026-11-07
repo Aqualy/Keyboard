@@ -9,3 +9,14 @@ export const announceKeyTap = (code: string) =>
 
 export const announceSoftKey = (character: string) =>
   window.dispatchEvent(new CustomEvent<string>(SOFT_KEY_EVENT, { detail: character }))
+
+/** Announces every key going down or up, from any input, for views that follow the keyboard. */
+export const KEY_STATE_EVENT = 'gmk:keystate'
+
+export interface KeyState {
+  code: string
+  down: boolean
+}
+
+export const announceKeyState = (code: string, down: boolean) =>
+  window.dispatchEvent(new CustomEvent<KeyState>(KEY_STATE_EVENT, { detail: { code, down } }))

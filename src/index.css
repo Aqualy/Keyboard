@@ -179,6 +179,48 @@ button {
   transform: none;
 }
 
+/* Switch cutaway: beside the lifted switches on wide screens, in the folder on narrow ones. */
+
+.cutaway {
+  margin: 0;
+}
+
+.cutaway svg {
+  display: block;
+  width: 100%;
+  touch-action: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cutaway p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.cutaway-stage {
+  position: absolute;
+  top: 50%;
+  left: var(--gutter);
+  width: 210px;
+  padding: 16px 18px 18px;
+  border-radius: var(--radius);
+  background: var(--card);
+  transform: translateY(-50%);
+  animation: folder-open 0.35s ease both;
+}
+
+.cutaway-stage svg {
+  max-width: 170px;
+  margin: 0 auto;
+}
+
+.cutaway-folder {
+  display: none;
+}
+
 /* Panel */
 
 .panel {
@@ -674,6 +716,26 @@ button {
     top: 8px;
     transform: none;
   }
+
+  .cutaway-stage {
+    display: none;
+  }
+
+  .cutaway-folder {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    align-items: center;
+    gap: 4px 16px;
+  }
+
+  .cutaway-folder .label {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+
+  .cutaway-folder p {
+    margin: 0;
+  }
 }
 
 @media (max-width: 600px) {
@@ -791,6 +853,26 @@ button {
 
   .orbit-hint {
     display: none;
+  }
+
+  .cutaway-stage {
+    display: none;
+  }
+
+  .cutaway-folder {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    align-items: center;
+    gap: 4px 12px;
+  }
+
+  .cutaway-folder .label {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+
+  .cutaway-folder p {
+    margin: 0;
   }
 
   .typing {

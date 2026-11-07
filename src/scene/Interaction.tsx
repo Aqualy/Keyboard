@@ -4,7 +4,7 @@ import { playKey, playKnobTick } from '../audio/engine'
 import { useStage } from '../state/stage'
 import { codeForCharacter } from '../test/typing'
 import { createKeyTracker, shouldPressKey } from './keyInput'
-import { announceKeyTap, SOFT_KEY_EVENT } from './keyTap'
+import { announceKeyState, announceKeyTap, SOFT_KEY_EVENT } from './keyTap'
 import type { KeyboardRig } from './KeyboardRig'
 import { LAYERS } from './layers'
 
@@ -20,10 +20,12 @@ function useKeyTracker(rig: KeyboardRig) {
         press: (code) => {
           rig.press(code)
           playKey(code, 'press')
+          announceKeyState(code, true)
         },
         release: (code) => {
           rig.release(code)
           playKey(code, 'release')
+          announceKeyState(code, false)
         },
       }),
     [rig],

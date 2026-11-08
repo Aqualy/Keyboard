@@ -25,7 +25,6 @@ const SHOTS: Record<string, Shot> = {
   configure: { direction: [0, 0.63, 0.77], target: [0, 1.5, 0.5], width: 36, height: 17.5 },
   exploded: { direction: [0.62, 0.42, 0.66], target: [0, 10.5, 0], width: 41, height: 38 },
   // Isolating a part spreads the board to a height that depends on how many layers sit above it.
-  'isolate-keycaps': { direction: [0.5, 0.55, 0.67], target: [0, 2.6, 0], width: 42, height: 26 },
   'isolate-switches': { direction: [0.5, 0.5, 0.71], target: [0, 7.2, 0], width: 40, height: 31 },
   'isolate-plate': { direction: [0.5, 0.5, 0.71], target: [0, 7.2, 0], width: 40, height: 31 },
   // Pulled back and higher, so the whole desk mat and the cable's run are in view.

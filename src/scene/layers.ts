@@ -47,7 +47,8 @@ const ISOLATED: Record<Section, LayerId | null> = {
   // Size and standard change the whole board, so it stays together.
   layout: null,
   case: null,
-  keycaps: 'keycaps',
+  // Keycaps are judged on the board, seated as they will be used.
+  keycaps: null,
   switches: 'switches',
   plate: 'plate',
   // Lighting runs across the whole board, so it stays together.

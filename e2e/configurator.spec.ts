@@ -87,10 +87,13 @@ test('a corrupt URL falls back to the default build', async ({ page }) => {
   expect(errors).toEqual([])
 })
 
-test('an open folder lifts its part out of the board, and Case puts it back', async ({ page }) => {
+test('an open folder lifts its part out of the board, and Keycaps puts it back', async ({
+  page,
+}) => {
   await openConfigurator(page)
   let previous = await canvasImage(page)
-  for (const folder of ['Switches', 'Plate', 'Keycaps', 'Case']) {
+  // Keycaps stay seated, so opening them after the plate assembles the board again.
+  for (const folder of ['Switches', 'Plate', 'Keycaps']) {
     await openFolder(page, folder)
     await waitForStillCanvas(page)
     const next = await canvasImage(page)

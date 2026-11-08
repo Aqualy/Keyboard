@@ -322,8 +322,8 @@ for (const [sizeId, size] of Object.entries(SIZES)) {
       rows: size.depth,
       // The key well leaves a raised pad in one corner. The knob takes the key slot there.
       knob: { ...cell(size.knob.column, size.knob.row), radius: 0.8, wellMargin: 0.04 },
-      // Keycap skirt height above the plate, seated so the cap socket rests on the stem's shoulder.
-      keycapBaseZ: 0.48,
+      // Keycap skirt height above the plate. Set a little low, so the caps sit snug in the case.
+      keycapBaseZ: 0.44,
       indicator: size.indicator
         ? {
             ...cell(size.indicator.column, size.indicator.row),

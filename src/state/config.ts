@@ -29,9 +29,12 @@ import {
 } from '../data/options'
 import { keyByCode, layoutFor, SIZES, STANDARDS, withLegends, type SizeId } from '../data/layout'
 import { defaultRegion, REGIONS, type RegionId, type Standard } from '../data/regions'
+import { KEYSETS, type KeysetId } from '../data/keysets'
 
 export interface Config extends Colours {
   profile: ProfileId
+  /** A whole keycap set, which overrides the separate keycap and legend colours. */
+  keyset: KeysetId
   finish: FinishId
   switch: SwitchId
   plate: PlateId
@@ -49,6 +52,7 @@ export interface Config extends Colours {
 export const DEFAULT_CONFIG: Config = {
   ...COLOURWAYS[0].colours,
   profile: 'cherry',
+  keyset: 'none',
   finish: 'pbt',
   switch: 'cream',
   plate: 'pc',
@@ -72,6 +76,7 @@ const CHOICES: Record<keyof Config, readonly { id: string }[]> = {
   accent: KEYCAP_COLOURS,
   legend: LEGEND_COLOURS,
   profile: PROFILES,
+  keyset: KEYSETS,
   finish: FINISHES,
   switch: SWITCHES,
   plate: PLATES,
@@ -87,6 +92,9 @@ const CHOICES: Record<keyof Config, readonly { id: string }[]> = {
 }
 
 const FIELDS = Object.keys(CHOICES) as (keyof Config)[]
+
+/** The colours a keycap set takes over. */
+const KEYCAP_FIELDS: (keyof Config)[] = ['alpha', 'mod', 'accent', 'legend']
 
 /** Legends belong to a standard: a region printed for ISO keys can't go on an ANSI board. */
 function normalize(config: Config): Config {
@@ -117,8 +125,9 @@ export function serializeConfig(config: Config): string {
   return params.toString()
 }
 
-/** The preset a build matches exactly, or undefined for a custom mix. */
-export function matchColourway(config: Colours): ColourwayId | undefined {
+/** The preset a build matches exactly, or undefined for a custom mix or a keycap set. */
+export function matchColourway(config: Colours & { keyset?: KeysetId }): ColourwayId | undefined {
+  if (config.keyset && config.keyset !== 'none') return undefined
   return COLOURWAYS.find((way) =>
     (Object.keys(way.colours) as (keyof Colours)[]).every(
       (zone) => way.colours[zone] === config[zone],
@@ -137,6 +146,8 @@ export const useConfig = create<ConfigStore>((set) => ({
   update: (patch) =>
     set((state) => {
       const next = { ...state.config, ...patch }
+      // Picking a single keycap or legend colour leaves the set for a mix of one's own.
+      if (!patch.keyset && KEYCAP_FIELDS.some((field) => field in patch)) next.keyset = 'none'
       // Picking a region picks its standard; picking a standard falls back to its first region.
       if (patch.region) {
         next.standard = REGIONS.find((region) => region.id === patch.region)!.standard
@@ -146,7 +157,7 @@ export const useConfig = create<ConfigStore>((set) => ({
   applyColourway: (id) =>
     set((state) => {
       const way = COLOURWAYS.find((candidate) => candidate.id === id)
-      return way ? { config: { ...state.config, ...way.colours } } : state
+      return way ? { config: { ...state.config, ...way.colours, keyset: 'none' } } : state
     }),
 }))
 

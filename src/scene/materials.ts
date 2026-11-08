@@ -38,6 +38,9 @@ export const uniforms = {
   mod: color(),
   accent: color(),
   legend: color(),
+  /** Legend colours on mods and accents, which keycap sets print differently from the alphas. */
+  legendMod: color(),
+  legendAccent: color(),
   plate: color(),
   knob: color(),
   stem: color(),
@@ -253,7 +256,11 @@ export function createKeycapMaterial(legends: CanvasTexture) {
     // One whole-board mask projected from above, so every cap finds its own legend.
     const uv = key.add(positionGeometry.xz).div(KEY_AREA).add(0.5)
     const ink = texture(legends, uv).r
-    const printed = mix(base, uniforms.legend, ink)
+    const inkColour = uniforms.legend
+      .mul(zone.x)
+      .add(uniforms.legendMod.mul(zone.y))
+      .add(uniforms.legendAccent.mul(zone.z))
+    const printed = mix(base, inkColour, ink)
 
     // No shadows between keys, so depth comes from darkening each cap's lower wall.
     const occlusion = float(1)

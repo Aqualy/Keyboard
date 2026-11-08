@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { COLOURWAYS } from './data/options'
 import { layoutOf, matchColourway, useConfig } from './state/config'
+import { keysetOf } from './data/keysets'
 import { isDark, useStage } from './state/stage'
 import { TypingTest } from './test/TypingTest'
 import { Folders } from './ui/Folders'
@@ -54,7 +55,8 @@ function Summary() {
   const config = useConfig((state) => state.config)
   const setMode = useStage((state) => state.setMode)
   const preset = matchColourway(config)
-  const colourway = COLOURWAYS.find((way) => way.id === preset)?.name ?? 'Custom'
+  const keyset = keysetOf(config.keyset)
+  const colourway = keyset?.name ?? COLOURWAYS.find((way) => way.id === preset)?.name ?? 'Custom'
   return (
     <header className="summary">
       <div>

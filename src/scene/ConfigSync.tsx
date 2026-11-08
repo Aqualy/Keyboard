@@ -14,6 +14,7 @@ import {
   byId,
 } from '../data/options'
 import { preloadSwitch } from '../audio/engine'
+import { keysetOf } from '../data/keysets'
 import { motion } from '../motion'
 import { useConfig, type Config } from '../state/config'
 import { useStage } from '../state/stage'
@@ -37,10 +38,21 @@ function tweenColour(target: { value: Color }, hex: string, duration: number) {
 
 function applyConfig(rig: KeyboardRig, config: Config, duration: number) {
   tweenColour(uniforms.case, byId(CASE_COLOURS, config.case).hex, duration)
-  tweenColour(uniforms.alpha, byId(KEYCAP_COLOURS, config.alpha).hex, duration)
-  tweenColour(uniforms.mod, byId(KEYCAP_COLOURS, config.mod).hex, duration)
-  tweenColour(uniforms.accent, byId(KEYCAP_COLOURS, config.accent).hex, duration)
-  tweenColour(uniforms.legend, byId(LEGEND_COLOURS, config.legend).hex, duration)
+  // A keycap set brings its own cap colours and a legend colour per zone.
+  const keyset = keysetOf(config.keyset)
+  const legend = byId(LEGEND_COLOURS, config.legend).hex
+  const caps = keyset?.caps ?? {
+    alpha: byId(KEYCAP_COLOURS, config.alpha).hex,
+    mod: byId(KEYCAP_COLOURS, config.mod).hex,
+    accent: byId(KEYCAP_COLOURS, config.accent).hex,
+  }
+  const legends = keyset?.legends ?? { alpha: legend, mod: legend, accent: legend }
+  tweenColour(uniforms.alpha, caps.alpha, duration)
+  tweenColour(uniforms.mod, caps.mod, duration)
+  tweenColour(uniforms.accent, caps.accent, duration)
+  tweenColour(uniforms.legend, legends.alpha, duration)
+  tweenColour(uniforms.legendMod, legends.mod, duration)
+  tweenColour(uniforms.legendAccent, legends.accent, duration)
 
   const finish = byId(FINISHES, config.finish)
   gsap.to(uniforms.keycapRoughness, { value: finish.roughness, duration, overwrite: true })

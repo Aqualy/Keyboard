@@ -141,3 +141,44 @@ describe('layout choices', () => {
     expect(useConfig.getState().config).toMatchObject({ standard: 'ansi', region: 'us' })
   })
 })
+
+describe('keycap sets', () => {
+  beforeEach(() => useConfig.setState({ config: DEFAULT_CONFIG }))
+
+  it('round-trips a set through the URL', () => {
+    const config = { ...DEFAULT_CONFIG, keyset: 'fern' as const }
+    expect(serializeConfig(config)).toBe('keyset=fern')
+    expect(parseConfig('?keyset=fern')).toEqual(config)
+  })
+
+  it('ignores an unknown set', () => {
+    expect(parseConfig('?keyset=nope').keyset).toBe('none')
+  })
+
+  it('leaves the set when a single keycap or legend colour is picked', () => {
+    for (const patch of [
+      { alpha: 'grey' },
+      { mod: 'sky' },
+      { accent: 'oak' },
+      { legend: 'rose' },
+    ]) {
+      useConfig.getState().update({ keyset: 'neon' })
+      useConfig.getState().update(patch as Partial<Config>)
+      expect(useConfig.getState().config.keyset).toBe('none')
+    }
+  })
+
+  it('keeps the set through other changes', () => {
+    useConfig.getState().update({ keyset: 'lacquer' })
+    useConfig.getState().update({ profile: 'sa', case: 'black' })
+    expect(useConfig.getState().config.keyset).toBe('lacquer')
+  })
+
+  it('leaves the set for a colourway, and matches no colourway while on', () => {
+    useConfig.getState().update({ keyset: 'static' })
+    expect(matchColourway(useConfig.getState().config)).toBeUndefined()
+    useConfig.getState().applyColourway('black')
+    expect(useConfig.getState().config.keyset).toBe('none')
+    expect(matchColourway(useConfig.getState().config)).toBe('black')
+  })
+})

@@ -15,6 +15,7 @@ import { Lighting } from './Lighting'
 import { KeyboardRig } from './KeyboardRig'
 import { arrangementFor } from './layers'
 import { createLegendTexture, legendFontReady, repaintLegends } from './legends'
+import { usesSymbols } from '../data/keysets'
 
 const base = import.meta.env.BASE_URL
 const model = (file: string) => `${base}models/${file}`
@@ -51,10 +52,10 @@ function Keyboard({ layout }: { layout: Layout }) {
   ])
   const scene = useThree((state) => state.scene)
 
-  const legends = useMemo(
-    () => createLegendTexture(layout, useConfig.getState().config.region),
-    [layout],
-  )
+  const legends = useMemo(() => {
+    const { config } = useConfig.getState()
+    return createLegendTexture(layout, config.region, usesSymbols(config.keyset))
+  }, [layout])
   const rig = useMemo(
     () =>
       new KeyboardRig({
@@ -74,8 +75,12 @@ function Keyboard({ layout }: { layout: Layout }) {
   useEffect(
     () =>
       useConfig.subscribe((state, previous) => {
-        if (state.config.region !== previous.config.region) {
-          repaintLegends(legends, layout, state.config.region)
+        const symbols = usesSymbols(state.config.keyset)
+        if (
+          state.config.region !== previous.config.region ||
+          symbols !== usesSymbols(previous.config.keyset)
+        ) {
+          repaintLegends(legends, layout, state.config.region, symbols)
         }
       }),
     [legends, layout],

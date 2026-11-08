@@ -20,6 +20,7 @@ import {
 } from '../data/options'
 import { SIZES, STANDARDS } from '../data/layout'
 import { REGIONS } from '../data/regions'
+import { KEYSETS } from '../data/keysets'
 import { matchColourway, useConfig } from '../state/config'
 import { SECTIONS, useStage, type Section } from '../state/stage'
 import { Pills, Specs, Swatches } from './controls'
@@ -137,6 +138,7 @@ function KeycapsFolder() {
   const config = useConfig((state) => state.config)
   const update = useConfig((state) => state.update)
   const [zone, setZone] = useState<Zone>('alpha')
+  const inSet = config.keyset !== 'none'
   return (
     <Folder
       id="keycaps"
@@ -154,19 +156,26 @@ function KeycapsFolder() {
         value={config.finish}
         onChange={(id) => update({ finish: id })}
       />
+      <Pills
+        label="Set"
+        options={KEYSETS}
+        value={config.keyset}
+        onChange={(id) => update({ keyset: id })}
+      />
       <Pills label="Colour" options={ZONES} value={zone} onChange={setZone} />
+      {/* While a set is on, no single colour is chosen; picking one starts a mix of one's own. */}
       {zone === 'legend' ? (
         <Swatches
           label="Legend colour"
           options={LEGEND_COLOURS}
-          value={config.legend}
+          value={inSet ? '' : config.legend}
           onChange={(id) => update({ legend: id })}
         />
       ) : (
         <Swatches
           label={`${ZONES.find((item) => item.id === zone)?.name} colour`}
           options={KEYCAP_COLOURS}
-          value={config[zone]}
+          value={inSet ? '' : config[zone]}
           onChange={(id) => update({ [zone]: id })}
         />
       )}

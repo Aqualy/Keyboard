@@ -151,7 +151,9 @@ const SIZES = {
     columns: 18.25,
     depth: 6.5,
     knob: { column: 17.75 - 0.5, row: 0 },
-    indicator: { column: 15.25, row: 4 },
+    // The indicator is a tab of the case reaching in from the front wall, and a TKL's full
+    // bottom row leaves it no way through.
+    indicator: null,
     rows: (iso) => [
       {
         top: 0,

@@ -5,19 +5,18 @@ export const LAYERS = [
   { id: 'keycaps', label: 'Keycaps', lift: 19, parts: [] },
   { id: 'switches', label: 'Switches', lift: 15.5, parts: [] },
   { id: 'knob', label: 'Multimedia knob', lift: 13, parts: ['knob'] },
-  { id: 'upperLid', label: 'Upper lid', lift: 10.5, parts: ['upperLid'] },
+  {
+    id: 'upperLid',
+    label: 'Upper lid',
+    lift: 10.5,
+    // The LED indicator sits in a tab of the top case, so it travels with it.
+    parts: ['upperLid', 'ledIndicator', 'ledIndicatorFace', 'ledIndicatorLights'],
+  },
   {
     id: 'plate',
     label: 'Positioning plate',
     lift: 8,
-    parts: [
-      'plate',
-      'stabilizers',
-      'stabilizerWires',
-      'ledIndicator',
-      'ledIndicatorFace',
-      'ledIndicatorLights',
-    ],
+    parts: ['plate', 'stabilizers', 'stabilizerWires'],
   },
   { id: 'plateFoam', label: 'Plate foam', lift: 6.2, parts: ['plateFoam'] },
   { id: 'pcbFoam', label: 'PCB foam', lift: 4.6, parts: ['pcbFoam'] },

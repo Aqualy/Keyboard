@@ -262,13 +262,21 @@ def case_outline(segments=10, inset=0.0):
 
 
 def opening_cutter(z0, z1, name="opening"):
-    """Key well, leaving a raised pad under the knob in the top right corner."""
+    """Key well, leaving a raised pad under the knob in the top right corner, and a tab of the
+    case reaching in from the front wall to carry the LED indicator."""
     hw = KEY_AREA_W / 2 + 0.1
     hd = KEY_AREA_D / 2 + 0.1
     # The pad is the knob's own key slot, from its left and front edges to the case's corner.
     notch_x = LAYOUT["knob"]["x"] - PITCH / 2 + LAYOUT["knob"]["wellMargin"]
     notch_y = LAYOUT["knob"]["y"] - PITCH / 2 + LAYOUT["knob"]["wellMargin"]
-    outline = [(-hw, -hd), (hw, -hd), (hw, notch_y), (notch_x, notch_y), (notch_x, hd), (-hw, hd)]
+    front = [(-hw, -hd)]
+    indicator = LAYOUT["indicator"]
+    if indicator:
+        x0 = indicator["x"] - indicator["width"] / 2
+        x1 = indicator["x"] + indicator["width"] / 2
+        y1 = indicator["y"] + indicator["depth"] / 2
+        front += [(x0, -hd), (x0, y1), (x1, y1), (x1, -hd)]
+    outline = front + [(hw, -hd), (hw, notch_y), (notch_x, notch_y), (notch_x, hd), (-hw, hd)]
     return prism(name, outline, z0, z1)
 
 
@@ -445,17 +453,17 @@ def build_screws(mat):
 
 
 def build_indicator(mat_body, mat_face, mat_light):
-    """A slim pillar standing in the gap beside the arrow keys."""
+    """The indicator's face and lights, set into the case tab beside the arrow keys. The body
+    fills the space under the tab, down to the plate, out of sight."""
     if not LAYOUT["indicator"]:
         return []
     x, y = LAYOUT["indicator"]["x"], LAYOUT["indicator"]["y"]
     hw = LAYOUT["indicator"]["width"] / 2
     hd = LAYOUT["indicator"]["depth"] / 2
-    top = 0.95
+    top = CASE["topZ"]
     bm = bmesh.new()
-    add_box(bm, x - hw, x + hw, y - hd, y + hd, -0.3, top)
+    add_box(bm, x - hw + 0.02, x + hw - 0.02, y - hd + 0.02, y + hd - 0.02, -0.3, 0.0)
     body = to_object("ledIndicator", bm, mat_body)
-    soften(body, 0.05, 2)
 
     bm = bmesh.new()
     add_box(bm, x - hw + 0.09, x + hw - 0.09, y - hd + 0.09, y + hd - 0.09, top - 0.02, top + 0.012)

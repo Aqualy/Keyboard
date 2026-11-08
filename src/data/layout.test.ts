@@ -61,13 +61,14 @@ describe.each(LAYOUTS.map((layout) => [layout.id, layout] as const))('%s layout'
     expect(Math.max(...parts.map((part) => part.y))).toBeCloseTo(knob.y, 3)
   })
 
-  it('stands the indicator in a free slot', () => {
+  it('gives the indicator a clear path from the front wall, where its case tab comes in', () => {
     if (!layout.indicator) return
     const { indicator } = layout
+    const back = indicator.y + indicator.depth / 2
     const inTheWay = footprints(layout).filter(
       (part) =>
         Math.abs(part.x - indicator.x) < part.half + indicator.width / 2 - 0.001 &&
-        Math.abs(part.y - indicator.y) < pitch - 0.001,
+        part.y - pitch / 2 < back - 0.001,
     )
     expect(inTheWay.map((part) => part.code)).toEqual([])
   })

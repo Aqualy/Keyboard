@@ -13,12 +13,7 @@
     "wellMargin": 0.04
   },
   "keycapBaseZ": 0.48,
-  "indicator": {
-    "x": 12.6206,
-    "y": -3.3338,
-    "width": 0.72,
-    "depth": 1.8
-  },
+  "indicator": null,
   "case": {
     "width": 36.7863,
     "depth": 14.5075,

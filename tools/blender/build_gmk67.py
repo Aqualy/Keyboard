@@ -280,6 +280,38 @@ def opening_cutter(z0, z1, name="opening"):
     return prism(name, outline, z0, z1)
 
 
+def key_strips():
+    """The key well as rows of touching keys, each row one strip with a little clearance.
+    Gaps between key groups stay solid case, as on a real 75% or TKL top case."""
+    u = PITCH
+    cells = []
+    for key in KEYS:
+        x, y = key["x"], key["y"]
+        if key.get("shape") == "isoEnter":
+            # The L spans two rows: wide on top, narrower below, the switch on the line between.
+            cells.append((x - 0.875 * u, x + 0.625 * u, y + u / 2))
+            cells.append((x - 0.625 * u, x + 0.625 * u, y - u / 2))
+        else:
+            half = key["width"] * u / 2
+            cells.append((x - half, x + half, y))
+    rows = {}
+    for x0, x1, y in cells:
+        rows.setdefault(round(y, 3), []).append((x0, x1))
+    strips = []
+    for y, spans in rows.items():
+        spans.sort()
+        start, end = spans[0]
+        for x0, x1 in spans[1:]:
+            if x0 <= end + 1e-3:
+                end = max(end, x1)
+            else:
+                strips.append((start, end, y))
+                start, end = x0, x1
+        strips.append((start, end, y))
+    margin = 0.1
+    return [(x0 - margin, x1 + margin, y - u / 2 - margin, y + u / 2 + margin) for x0, x1, y in strips]
+
+
 def build_upper_lid(mat):
     lid = prism("upperLid", case_outline(), -6, CASE["topZ"], mat)
     soften(lid, 0.2, 6, 35, 34)
@@ -289,7 +321,13 @@ def build_upper_lid(mat):
     profile = [(y, seam_z(y)) for y in samples] + [(half, 2.0), (-half, 2.0)]
     boolean(lid, extruded_profile("upperProfile", profile), "INTERSECT")
 
-    boolean(lid, opening_cutter(-3, 3))
+    if LAYOUT["size"] == "65":
+        boolean(lid, opening_cutter(-3, 3))
+    else:
+        for i, (x0, x1, y0, y1) in enumerate(key_strips()):
+            bm = bmesh.new()
+            add_box(bm, x0, x1, y0, y1, -3, 3)
+            boolean(lid, to_object(f"keyStrip{i}", bm))
     boolean(lid, prism("upperHollow", case_outline(4, UPPER_WALL), -6, 0))
     bm = bmesh.new()
     add_cylinder(bm, LAYOUT["knob"]["x"], LAYOUT["knob"]["y"], 0.42, -3, 3, 24)

@@ -617,6 +617,9 @@ def build_keyboard():
 
 # Keycaps -------------------------------------------------------------------------
 
+# Half the gap between neighbouring caps at the skirt, so caps sit 0.6 mm apart.
+CAP_CLEARANCE = 0.03
+
 PROFILES = {
     # height per sculpt row, top tilt per row in degrees, top size, dish depth, spherical?
     "cherry": dict(
@@ -679,7 +682,7 @@ def rounded_polygon(points, radii, segments=5):
 def iso_enter_outline(d, scale, radius):
     """The L of an ISO Enter, inset by d, with the switch at the origin."""
     u = PITCH
-    g = 0.045 + d
+    g = CAP_CLEARANCE + d
     points = [
         (-0.875 * u + g, u - g),
         (0.625 * u - g, u - g),
@@ -705,12 +708,12 @@ def build_keycap(name, width, row, homing, profile, iso=False):
     if iso:
         # The top's dish runs across the wide upper part.
         centre_x = -0.125 * PITCH
-        top_hw = 0.75 * PITCH - 0.045 - inset
-        top_hd = PITCH - 0.045 - inset
+        top_hw = 0.75 * PITCH - CAP_CLEARANCE - inset
+        top_hd = PITCH - CAP_CLEARANCE - inset
     else:
         centre_x = 0.0
-        base_hw = width * PITCH / 2 - 0.045
-        base_hd = PITCH / 2 - 0.045
+        base_hw = width * PITCH / 2 - CAP_CLEARANCE
+        base_hd = PITCH / 2 - CAP_CLEARANCE
         top_hw = base_hw - inset
         top_hd = base_hd - inset
 

@@ -1,3 +1,5 @@
+import type { KeysetId } from './keysets'
+
 export interface Swatch {
   id: string
   name: string
@@ -55,28 +57,51 @@ export interface Colours {
   legend: LegendColourId
 }
 
-export const COLOURWAYS = [
+/**
+ * Whole looks in one click: a case colour with keycaps to match. The first four set every keycap
+ * and legend colour; the rest put on a keycap set, which brings its own.
+ */
+export const PRESETS = [
   {
     id: 'white',
     name: 'White',
-    colours: { case: 'white', alpha: 'white', mod: 'white', accent: 'white', legend: 'ink' },
+    case: 'white',
+    keyset: 'none',
+    keycaps: { alpha: 'white', mod: 'white', accent: 'white', legend: 'ink' },
   },
   {
     id: 'black',
     name: 'Black',
-    colours: { case: 'black', alpha: 'black', mod: 'black', accent: 'oak', legend: 'white' },
+    case: 'black',
+    keyset: 'none',
+    keycaps: { alpha: 'black', mod: 'black', accent: 'oak', legend: 'white' },
   },
   {
     id: 'sky',
     name: 'Sky',
-    colours: { case: 'sky', alpha: 'white', mod: 'sky', accent: 'sky', legend: 'navy' },
+    case: 'sky',
+    keyset: 'none',
+    keycaps: { alpha: 'white', mod: 'sky', accent: 'sky', legend: 'navy' },
   },
   {
     id: 'beet',
     name: 'Beet',
-    colours: { case: 'beet', alpha: 'beet', mod: 'plum', accent: 'plum', legend: 'rose' },
+    case: 'beet',
+    keyset: 'none',
+    keycaps: { alpha: 'beet', mod: 'plum', accent: 'plum', legend: 'rose' },
   },
-] as const satisfies readonly { id: string; name: string; colours: Colours }[]
+  { id: 'blush', name: 'Blush', case: 'rose', keyset: 'blush' },
+  { id: 'fern', name: 'Fern', case: 'forest', keyset: 'fern' },
+  { id: 'neon', name: 'Neon', case: 'indigo', keyset: 'neon' },
+  { id: 'lacquer', name: 'Lacquer', case: 'gold', keyset: 'lacquer' },
+  { id: 'static', name: 'Static', case: 'graphite', keyset: 'static' },
+] as const satisfies readonly {
+  id: string
+  name: string
+  case: CaseColourId
+  keyset: KeysetId
+  keycaps?: Omit<Colours, 'case'>
+}[]
 
 export const PROFILES = [
   {
@@ -436,7 +461,7 @@ export const hasLightColour = (effect: RgbEffectId) => effect === 'static' || ef
 
 export type BrightnessId = (typeof BRIGHTNESS)[number]['id']
 
-export type ColourwayId = (typeof COLOURWAYS)[number]['id']
+export type PresetId = (typeof PRESETS)[number]['id']
 export type ProfileId = (typeof PROFILES)[number]['id']
 export type SwitchId = (typeof SWITCHES)[number]['id']
 export type PlateId = (typeof PLATES)[number]['id']

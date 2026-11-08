@@ -864,11 +864,11 @@ button {
     flex-direction: row;
   }
 
-  /* Seven tabs are too narrow to read in one row, so they wrap to two above the open folder. */
+  /* Six tabs are too narrow to read in one row, so they wrap to two above the open folder. */
   .folders {
     --folder-height: 380px;
     grid-template-rows: auto auto minmax(0, 1fr);
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     row-gap: 6px;
   }
 

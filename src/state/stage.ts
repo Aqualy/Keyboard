@@ -6,15 +6,7 @@ import type { KeyHeat } from '../test/typing'
 export type StageMode = 'configure' | 'exploded' | 'test' | 'cinematic'
 
 /** The open folder in the configurator. One part of the keyboard is edited at a time. */
-export const SECTIONS = [
-  'layout',
-  'case',
-  'keycaps',
-  'switches',
-  'plate',
-  'lighting',
-  'desk',
-] as const
+export const SECTIONS = ['layout', 'style', 'switches', 'plate', 'lighting', 'desk'] as const
 export type Section = (typeof SECTIONS)[number]
 
 /** One click of the knob changes the volume by this much. */
@@ -73,7 +65,7 @@ interface StageStore {
 
 export const useStage = create<StageStore>((set) => ({
   mode: 'configure',
-  section: 'case',
+  section: 'style',
   ready: false,
   soundOn: true,
   hasOrbited: false,

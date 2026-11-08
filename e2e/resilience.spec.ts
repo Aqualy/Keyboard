@@ -42,7 +42,7 @@ test('respects reduced motion', async ({ browser, baseURL }) => {
 
 test('keyboard users can reach and operate the controls', async ({ page }) => {
   await openConfigurator(page)
-  await page.getByRole('group', { name: 'Colourway' }).getByRole('radio', { name: 'White' }).focus()
+  await page.getByRole('group', { name: 'Preset' }).getByRole('radio', { name: 'White' }).focus()
   await page.keyboard.press('ArrowRight')
   await expect(page.locator('.summary p')).toHaveText('Black')
 })

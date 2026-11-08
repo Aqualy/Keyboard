@@ -8,8 +8,8 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react'
-import { COLOURWAYS } from './data/options'
-import { layoutOf, matchColourway, useConfig } from './state/config'
+import { PRESETS } from './data/options'
+import { layoutOf, matchPreset, useConfig } from './state/config'
 import { keysetOf } from './data/keysets'
 import { isDark, useStage } from './state/stage'
 import { TypingTest } from './test/TypingTest'
@@ -54,14 +54,14 @@ class StageBoundary extends Component<{ children: ReactNode }, { failed: boolean
 function Summary() {
   const config = useConfig((state) => state.config)
   const setMode = useStage((state) => state.setMode)
-  const preset = matchColourway(config)
-  const keyset = keysetOf(config.keyset)
-  const colourway = keyset?.name ?? COLOURWAYS.find((way) => way.id === preset)?.name ?? 'Custom'
+  const preset = PRESETS.find((candidate) => candidate.id === matchPreset(config))
+  // A keycap set on another case still reads by the set's name.
+  const look = preset?.name ?? keysetOf(config.keyset)?.name ?? 'Custom'
   return (
     <header className="summary">
       <div>
         <h1>{layoutOf(config).name}</h1>
-        <p>{colourway}</p>
+        <p>{look}</p>
       </div>
       <button type="button" className="test-button" onClick={() => setMode('test')}>
         <span>Test</span>

@@ -4,7 +4,7 @@ import {
   CABLES,
   CASE_COLOURS,
   DESK_MATS,
-  COLOURWAYS,
+  PRESETS,
   FINISHES,
   KEYCAP_COLOURS,
   KNOBS,
@@ -21,7 +21,7 @@ import {
 import { SIZES, STANDARDS } from '../data/layout'
 import { REGIONS } from '../data/regions'
 import { KEYSETS } from '../data/keysets'
-import { matchColourway, useConfig } from '../state/config'
+import { matchPreset, useConfig } from '../state/config'
 import { SECTIONS, useStage, type Section } from '../state/stage'
 import { Pills, Specs, Swatches } from './controls'
 import { SwitchCutaway } from './SwitchCutaway'
@@ -37,8 +37,7 @@ type Zone = (typeof ZONES)[number]['id']
 
 const TITLES: Record<Section, string> = {
   layout: 'Layout',
-  case: 'Case',
-  keycaps: 'Keycaps',
+  style: 'Style',
   switches: 'Switches',
   plate: 'Plate',
   lighting: 'Lighting',
@@ -106,18 +105,17 @@ function LayoutFolder() {
   )
 }
 
-function CaseFolder() {
+/** The case and the keycaps together, since presets set both at once. */
+function StyleFolder() {
   const config = useConfig((state) => state.config)
   const update = useConfig((state) => state.update)
-  const applyColourway = useConfig((state) => state.applyColourway)
+  const applyPreset = useConfig((state) => state.applyPreset)
+  const [zone, setZone] = useState<Zone>('alpha')
+  const preset = matchPreset(config)
+  const inSet = config.keyset !== 'none'
   return (
-    <Folder id="case" value={byId(CASE_COLOURS, config.case).name}>
-      <Pills
-        label="Colourway"
-        options={COLOURWAYS}
-        value={matchColourway(config)}
-        onChange={applyColourway}
-      />
+    <Folder id="style" value={PRESETS.find((option) => option.id === preset)?.name ?? 'Custom'}>
+      <Pills label="Preset" options={PRESETS} value={preset} onChange={applyPreset} />
       <Swatches
         label="Case colour"
         options={CASE_COLOURS}
@@ -130,20 +128,6 @@ function CaseFolder() {
         value={config.knob}
         onChange={(id) => update({ knob: id })}
       />
-    </Folder>
-  )
-}
-
-function KeycapsFolder() {
-  const config = useConfig((state) => state.config)
-  const update = useConfig((state) => state.update)
-  const [zone, setZone] = useState<Zone>('alpha')
-  const inSet = config.keyset !== 'none'
-  return (
-    <Folder
-      id="keycaps"
-      value={`${byId(PROFILES, config.profile).name} ${byId(FINISHES, config.finish).name}`}
-    >
       <Pills
         label="Profile"
         options={PROFILES}
@@ -157,7 +141,7 @@ function KeycapsFolder() {
         onChange={(id) => update({ finish: id })}
       />
       <Pills
-        label="Set"
+        label="Keycap set"
         options={KEYSETS}
         value={config.keyset}
         onChange={(id) => update({ keyset: id })}
@@ -307,8 +291,7 @@ function DeskFolder() {
 
 const FOLDERS: Record<Section, () => ReactNode> = {
   layout: LayoutFolder,
-  case: CaseFolder,
-  keycaps: KeycapsFolder,
+  style: StyleFolder,
   switches: SwitchesFolder,
   plate: PlateFolder,
   lighting: LightingFolder,

@@ -46,9 +46,8 @@ export type Arrangement = 'assembled' | 'exploded' | { isolate: LayerId }
 const ISOLATED: Record<Section, LayerId | null> = {
   // Size and standard change the whole board, so it stays together.
   layout: null,
-  case: null,
-  // Keycaps are judged on the board, seated as they will be used.
-  keycaps: null,
+  // Case and keycaps are judged on the board, seated as they will be used.
+  style: null,
   switches: 'switches',
   plate: 'plate',
   // Lighting runs across the whole board, so it stays together.

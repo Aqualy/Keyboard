@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { COLOURWAYS } from '../data/options'
+import { PRESETS } from '../data/options'
 import {
   DEFAULT_CONFIG,
-  matchColourway,
+  matchPreset,
   parseConfig,
   serializeConfig,
   useConfig,
@@ -28,7 +28,7 @@ describe('parseConfig', () => {
   })
 
   it('starts as a white board', () => {
-    expect(matchColourway(DEFAULT_CONFIG)).toBe('white')
+    expect(matchPreset(DEFAULT_CONFIG)).toBe('white')
   })
 
   it('round-trips a custom build', () => {
@@ -93,16 +93,20 @@ describe('serializeConfig', () => {
   })
 })
 
-describe('matchColourway', () => {
-  it.each(COLOURWAYS.map((way) => [way.id, way.colours] as const))(
-    'recognises %s',
-    (id, colours) => {
-      expect(matchColourway(colours)).toBe(id)
-    },
-  )
+describe('matchPreset', () => {
+  beforeEach(() => useConfig.setState({ config: DEFAULT_CONFIG }))
+
+  it.each(PRESETS.map((preset) => preset.id))('recognises %s once applied', (id) => {
+    useConfig.getState().applyPreset(id)
+    expect(matchPreset(useConfig.getState().config)).toBe(id)
+  })
 
   it('reports a mixed build as custom', () => {
-    expect(matchColourway({ ...COLOURWAYS[0].colours, accent: 'oak' })).toBeUndefined()
+    expect(matchPreset({ ...DEFAULT_CONFIG, accent: 'oak' })).toBeUndefined()
+  })
+
+  it('reports a keycap set on another case as custom', () => {
+    expect(matchPreset({ ...DEFAULT_CONFIG, keyset: 'neon' })).toBeUndefined()
   })
 })
 
@@ -111,9 +115,9 @@ describe('useConfig', () => {
     useConfig.setState({ config: DEFAULT_CONFIG })
   })
 
-  it('applies a colourway without touching hardware', () => {
+  it('applies a preset without touching hardware', () => {
     useConfig.getState().update({ switch: 'boxnavy' })
-    useConfig.getState().applyColourway('beet')
+    useConfig.getState().applyPreset('beet')
     const { config } = useConfig.getState()
     expect(config.case).toBe('beet')
     expect(config.switch).toBe('boxnavy')
@@ -174,11 +178,10 @@ describe('keycap sets', () => {
     expect(useConfig.getState().config.keyset).toBe('lacquer')
   })
 
-  it('leaves the set for a colourway, and matches no colourway while on', () => {
-    useConfig.getState().update({ keyset: 'static' })
-    expect(matchColourway(useConfig.getState().config)).toBeUndefined()
-    useConfig.getState().applyColourway('black')
-    expect(useConfig.getState().config.keyset).toBe('none')
-    expect(matchColourway(useConfig.getState().config)).toBe('black')
+  it('puts on a set with its case from a preset, and takes it off for a plain one', () => {
+    useConfig.getState().applyPreset('lacquer')
+    expect(useConfig.getState().config).toMatchObject({ keyset: 'lacquer', case: 'gold' })
+    useConfig.getState().applyPreset('black')
+    expect(useConfig.getState().config).toMatchObject({ keyset: 'none', case: 'black' })
   })
 })

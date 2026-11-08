@@ -5,12 +5,9 @@ import { arrangementFor, LAYERS, liftsFor, staggerOrder } from './layers'
 const order = LAYERS.map((layer) => layer.id)
 
 describe('arrangementFor', () => {
-  it.each(['case', 'keycaps'] as const)(
-    'keeps the board assembled for the %s folder',
-    (section) => {
-      expect(arrangementFor('configure', section)).toBe('assembled')
-    },
-  )
+  it('keeps the board assembled for the style folder', () => {
+    expect(arrangementFor('configure', 'style')).toBe('assembled')
+  })
 
   it.each([
     ['switches', 'switches'],

@@ -14,36 +14,35 @@ const config = () => useConfig.getState().config
 describe('Folders', () => {
   beforeEach(() => {
     useConfig.setState({ config: DEFAULT_CONFIG })
-    useStage.setState({ section: 'case', compare: null })
+    useStage.setState({ section: 'style', compare: null })
     render(<Folders />)
   })
 
-  it('starts with only the case folder open', () => {
-    expect(tab('Case')).toHaveAttribute('aria-expanded', 'true')
-    for (const name of ['Keycaps', 'Switches', 'Plate', 'Lighting', 'Desk']) {
+  it('starts with only the style folder open', () => {
+    expect(tab('Style')).toHaveAttribute('aria-expanded', 'true')
+    for (const name of ['Layout', 'Switches', 'Plate', 'Lighting', 'Desk']) {
       expect(tab(name)).toHaveAttribute('aria-expanded', 'false')
     }
-    expect(screen.queryByRole('group', { name: 'Profile' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Switch' })).not.toBeInTheDocument()
   })
 
   it('opens one folder at a time and remembers it for the 3D fade', async () => {
     await open('Switches')
     expect(tab('Switches')).toHaveAttribute('aria-expanded', 'true')
-    expect(tab('Case')).toHaveAttribute('aria-expanded', 'false')
+    expect(tab('Style')).toHaveAttribute('aria-expanded', 'false')
     expect(group('Switch')).toBeVisible()
-    expect(screen.queryByRole('group', { name: 'Colourway' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Preset' })).not.toBeInTheDocument()
     expect(useStage.getState().section).toBe('switches')
   })
 
   it('shows each current choice on its tab', () => {
-    expect(tab('Keycaps')).toHaveTextContent('Cherry')
+    expect(tab('Style')).toHaveTextContent('White')
     expect(tab('Switches')).toHaveTextContent('Cream')
     expect(tab('Plate')).toHaveTextContent('PC')
   })
 
   it('reflects the default build', async () => {
-    expect(within(group('Colourway')).getByRole('radio', { name: 'White' })).toBeChecked()
-    await open('Keycaps')
+    expect(within(group('Preset')).getByRole('radio', { name: 'White' })).toBeChecked()
     expect(within(group('Profile')).getByRole('radio', { name: 'Cherry' })).toBeChecked()
     await open('Switches')
     expect(within(group('Switch')).getByRole('radio', { name: 'Cream' })).toBeChecked()
@@ -59,35 +58,31 @@ describe('Folders', () => {
     expect(names.every(Boolean)).toBe(true)
   })
 
-  it('applies a colourway to the whole board', async () => {
-    await userEvent.click(within(group('Colourway')).getByRole('radio', { name: 'Black' }))
+  it('applies a preset to the whole board', async () => {
+    await userEvent.click(within(group('Preset')).getByRole('radio', { name: 'Black' }))
     expect(config()).toMatchObject({ case: 'black', alpha: 'black', legend: 'white' })
   })
 
   it('shows no preset selected once the build is custom', async () => {
     await userEvent.click(within(group('Case colour')).getByRole('radio', { name: 'Sky' }))
-    for (const radio of within(group('Colourway')).getAllByRole('radio')) {
+    for (const radio of within(group('Preset')).getAllByRole('radio')) {
       expect(radio).not.toBeChecked()
     }
   })
 
   it('colours only the selected keycap zone', async () => {
-    await open('Keycaps')
     await userEvent.click(within(group('Colour')).getByRole('radio', { name: 'Mods' }))
     await userEvent.click(within(group('Mods colour')).getByRole('radio', { name: 'Oak' }))
     expect(config()).toMatchObject({ mod: 'oak', alpha: 'white', accent: 'white' })
   })
 
   it('offers matte PBT or shiny ABS keycaps', async () => {
-    await open('Keycaps')
     expect(within(group('Material')).getByRole('radio', { name: 'PBT' })).toBeChecked()
     await userEvent.click(within(group('Material')).getByRole('radio', { name: 'ABS' }))
     expect(config().finish).toBe('abs')
-    expect(tab('Keycaps')).toHaveTextContent('Cherry ABS')
   })
 
   it('switches to the legend palette for legends', async () => {
-    await open('Keycaps')
     await userEvent.click(within(group('Colour')).getByRole('radio', { name: 'Legends' }))
     await userEvent.click(within(group('Legend colour')).getByRole('radio', { name: 'Rose' }))
     expect(config().legend).toBe('rose')

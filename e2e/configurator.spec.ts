@@ -15,7 +15,7 @@ test('starts as a white GMK67 with a clean URL', async ({ page }) => {
   await openConfigurator(page)
   await expect(page.getByRole('heading', { name: 'GMK67' })).toBeVisible()
   await expect(
-    page.getByRole('group', { name: 'Colourway' }).getByRole('radio', { name: 'White' }),
+    page.getByRole('group', { name: 'Preset' }).getByRole('radio', { name: 'White' }),
   ).toBeChecked()
   expect(new URL(page.url()).search).toBe('')
   expect(errors).toEqual([])
@@ -32,7 +32,7 @@ test('has no horizontal page overflow', async ({ page }) => {
 test('every option group changes the rendered board', async ({ page }) => {
   await openConfigurator(page)
   const changes: [string, string][] = [
-    ['Colourway', 'Beet'],
+    ['Preset', 'Beet'],
     ['Case colour', 'Sky'],
     ['Profile', 'SA'],
     ['Profile', 'XDA'],
@@ -74,7 +74,7 @@ test('a shared URL restores the build after reload', async ({ page }) => {
   await expect(page.locator('.summary p')).toHaveText('Beet')
   await page.reload()
   await expect(page.locator('.app')).toHaveAttribute('data-ready', 'true')
-  await openFolder(page, 'Keycaps')
+  await openFolder(page, 'Style')
   await expect(
     page.getByRole('group', { name: 'Profile' }).getByRole('radio', { name: 'SA' }),
   ).toBeChecked()
@@ -87,13 +87,11 @@ test('a corrupt URL falls back to the default build', async ({ page }) => {
   expect(errors).toEqual([])
 })
 
-test('an open folder lifts its part out of the board, and Keycaps puts it back', async ({
-  page,
-}) => {
+test('an open folder lifts its part out of the board, and Style puts it back', async ({ page }) => {
   await openConfigurator(page)
   let previous = await canvasImage(page)
-  // Keycaps stay seated, so opening them after the plate assembles the board again.
-  for (const folder of ['Switches', 'Plate', 'Keycaps']) {
+  // Style keeps the board seated, so opening it after the plate assembles the board again.
+  for (const folder of ['Switches', 'Plate', 'Style']) {
     await openFolder(page, folder)
     await waitForStillCanvas(page)
     const next = await canvasImage(page)
@@ -132,7 +130,7 @@ test('the lighting folder darkens the room and lights the board', async ({ page 
   await expect(page).toHaveURL(/rgbColour=red/)
   await waitForStillCanvas(page)
   expect(sameImage(await canvasImage(page), unlit)).toBe(false)
-  await openFolder(page, 'Case')
+  await openFolder(page, 'Style')
   await expect(page.locator('.app')).toHaveAttribute('data-dark', 'false')
   expect(errors).toEqual([])
 })

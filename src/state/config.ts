@@ -4,7 +4,7 @@ import {
   CABLES,
   CASE_COLOURS,
   DESK_MATS,
-  COLOURWAYS,
+  PRESETS,
   FINISHES,
   KEYCAP_COLOURS,
   KNOBS,
@@ -18,7 +18,7 @@ import {
   type CableId,
   type DeskMatId,
   type Colours,
-  type ColourwayId,
+  type PresetId,
   type FinishId,
   type KnobId,
   type PlateId,
@@ -50,7 +50,8 @@ export interface Config extends Colours {
 }
 
 export const DEFAULT_CONFIG: Config = {
-  ...COLOURWAYS[0].colours,
+  case: PRESETS[0].case,
+  ...PRESETS[0].keycaps,
   profile: 'cherry',
   keyset: 'none',
   finish: 'pbt',
@@ -125,20 +126,23 @@ export function serializeConfig(config: Config): string {
   return params.toString()
 }
 
-/** The preset a build matches exactly, or undefined for a custom mix or a keycap set. */
-export function matchColourway(config: Colours & { keyset?: KeysetId }): ColourwayId | undefined {
-  if (config.keyset && config.keyset !== 'none') return undefined
-  return COLOURWAYS.find((way) =>
-    (Object.keys(way.colours) as (keyof Colours)[]).every(
-      (zone) => way.colours[zone] === config[zone],
-    ),
-  )?.id
+/** The preset a build matches, or undefined for a mix of one's own. */
+export function matchPreset(config: Colours & { keyset: KeysetId }): PresetId | undefined {
+  return PRESETS.find((preset) => {
+    if (preset.case !== config.case || preset.keyset !== config.keyset) return false
+    // A keycap set brings its own colours, so the separate ones underneath don't count.
+    if (!('keycaps' in preset)) return true
+    const keycaps: Omit<Colours, 'case'> = preset.keycaps
+    return (Object.keys(keycaps) as (keyof typeof keycaps)[]).every(
+      (zone) => keycaps[zone] === config[zone],
+    )
+  })?.id
 }
 
 interface ConfigStore {
   config: Config
   update: (patch: Partial<Config>) => void
-  applyColourway: (id: ColourwayId) => void
+  applyPreset: (id: PresetId) => void
 }
 
 export const useConfig = create<ConfigStore>((set) => ({
@@ -154,10 +158,12 @@ export const useConfig = create<ConfigStore>((set) => ({
       }
       return { config: normalize(next) }
     }),
-  applyColourway: (id) =>
+  applyPreset: (id) =>
     set((state) => {
-      const way = COLOURWAYS.find((candidate) => candidate.id === id)
-      return way ? { config: { ...state.config, ...way.colours, keyset: 'none' } } : state
+      const preset = PRESETS.find((candidate) => candidate.id === id)
+      if (!preset) return state
+      const keycaps = 'keycaps' in preset ? preset.keycaps : {}
+      return { config: { ...state.config, ...keycaps, case: preset.case, keyset: preset.keyset } }
     }),
 }))
 

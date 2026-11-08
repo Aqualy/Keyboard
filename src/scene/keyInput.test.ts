@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createKeyTracker, shouldPressKey } from './keyInput'
+import { claimsKey, createKeyTracker, shouldPressKey } from './keyInput'
 
 const element = (html: string) => {
   const host = document.createElement('div')
@@ -75,5 +75,40 @@ describe('createKeyTracker', () => {
     expect(sink.release).toHaveBeenCalledWith('KeyB')
     tracker.up('KeyA')
     expect(sink.release).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('claimsKey', () => {
+  const key = (
+    code: string,
+    modifiers: Partial<Record<'ctrlKey' | 'metaKey' | 'altKey', boolean>> = {},
+  ) => ({
+    code,
+    ctrlKey: false,
+    metaKey: false,
+    altKey: false,
+    ...modifiers,
+  })
+
+  it('takes every board key while configuring, navigation keys included', () => {
+    for (const code of ['KeyA', 'Tab', 'Space', 'Enter', 'ArrowRight', 'Backspace']) {
+      expect(claimsKey(key(code), 'configure')).toBe(true)
+      expect(claimsKey(key(code), 'exploded')).toBe(true)
+    }
+  })
+
+  it('leaves shortcuts to the browser', () => {
+    expect(claimsKey(key('KeyR', { ctrlKey: true }), 'configure')).toBe(false)
+    expect(claimsKey(key('KeyC', { metaKey: true }), 'configure')).toBe(false)
+    expect(claimsKey(key('Tab', { altKey: true }), 'configure')).toBe(false)
+  })
+
+  it('leaves keys that are not on the board', () => {
+    expect(claimsKey(key('F5'), 'configure')).toBe(false)
+  })
+
+  it('stays out of the typing test and cinematic mode', () => {
+    expect(claimsKey(key('KeyA'), 'test')).toBe(false)
+    expect(claimsKey(key('Escape'), 'cinematic')).toBe(false)
   })
 })

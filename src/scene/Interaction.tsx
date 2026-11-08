@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { playKey, playKnobTick } from '../audio/engine'
 import { useStage } from '../state/stage'
 import { codeForCharacter } from '../test/typing'
-import { createKeyTracker, shouldPressKey } from './keyInput'
+import { claimsKey, createKeyTracker, shouldPressKey } from './keyInput'
 import { announceKeyState, announceKeyTap, SOFT_KEY_EVENT } from './keyTap'
 import type { KeyboardRig } from './KeyboardRig'
 import { LAYERS } from './layers'
@@ -33,7 +33,15 @@ function useKeyTracker(rig: KeyboardRig) {
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
-      if (!shouldPressKey(event)) return
+      if (claimsKey(event, useStage.getState().mode)) {
+        // The key is the board's alone: the focused control neither reacts nor keeps the focus.
+        event.preventDefault()
+        const active = document.activeElement
+        if (active instanceof HTMLElement && active !== document.body) active.blur()
+        if (event.repeat) return
+      } else if (!shouldPressKey(event)) {
+        return
+      }
       tracker.down(event.code)
       useStage.getState().markTyped()
     }

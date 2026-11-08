@@ -40,9 +40,14 @@ test('respects reduced motion', async ({ browser, baseURL }) => {
   await context.close()
 })
 
-test('keyboard users can reach and operate the controls', async ({ page }) => {
+test('typing after using the menu presses the board, not the controls', async ({ page }) => {
   await openConfigurator(page)
-  await page.getByRole('group', { name: 'Preset' }).getByRole('radio', { name: 'White' }).focus()
-  await page.keyboard.press('ArrowRight')
+  const preset = page.getByRole('group', { name: 'Preset' })
+  await preset.getByRole('radio', { name: 'Black' }).check({ force: true })
   await expect(page.locator('.summary p')).toHaveText('Black')
+  for (const key of ['ArrowRight', 'Space', 'Enter', 'Tab', 'KeyA']) await page.keyboard.press(key)
+  await expect(page.locator('.summary p')).toHaveText('Black')
+  await expect(page.locator('.app')).toHaveAttribute('data-mode', 'configure')
+  // Nothing in the menu keeps the focus, so the next keys go to the board too.
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true)
 })

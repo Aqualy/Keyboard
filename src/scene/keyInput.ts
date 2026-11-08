@@ -30,6 +30,21 @@ export function shouldPressKey(event: {
   return !(inControl && CONTROL_KEYS.has(event.code))
 }
 
+/**
+ * Whether the board takes a key for itself. Outside the typing test, every key on the board
+ * presses its 3D twin and nothing else: a clicked pill or button must not change, Tab must not
+ * walk the menu, and Space or Enter must not press a control. Shortcuts with Ctrl, Cmd or Alt
+ * stay with the browser.
+ */
+export function claimsKey(
+  event: { code: string; ctrlKey: boolean; metaKey: boolean; altKey: boolean },
+  mode: string,
+) {
+  if (mode !== 'configure' && mode !== 'exploded') return false
+  if (event.ctrlKey || event.metaKey || event.altKey) return false
+  return currentKey(event.code) !== undefined
+}
+
 export interface KeySink {
   press: (code: string) => void
   release: (code: string) => void

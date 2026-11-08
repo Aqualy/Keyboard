@@ -78,11 +78,24 @@ export const uniforms = {
   ledReachKeycaps: uniform(1),
   ledReachSwitches: uniform(1),
   ledReachPlate: uniform(1),
+  /**
+   * How much the keycaps shade each part, 1 with the caps seated over it and 0 once they are
+   * lifted clear. Real caps keep the plate and switch tops in shadow between the keys.
+   */
+  capShadeSwitches: uniform(1),
+  capShadePlate: uniform(1),
   /** Seconds on the clock key presses are stamped with, for the reactive effect. */
   ledClock: uniform(0),
   /** 0 to 1 while a typing run's heatmap shows on the keys. */
   heatmap: uniform(0),
 }
+
+/** How bright a part stays in the keycaps' shadow. Only lit colour darkens; LED glow does not. */
+const UNDER_CAPS = 0.3
+
+/** Darkens a colour by how much the keycaps above shade it. */
+const shadedByCaps = (base: Node<'vec3'> | Node<'color'>, cover: Node<'float'>) =>
+  base.mul(mix(float(1), float(UNDER_CAPS), cover))
 
 /** Heatmap colours: the interface's blue for keys pressed, its red for keys missed. */
 const HEAT_PRESSED = new Color('#0a3dff')
@@ -278,7 +291,10 @@ export function createSwitchShellMaterial(part: 'top' | 'bottom') {
   // edges catch highlights, and the flat faces stay clear. Solid nylon and POM let none through.
   const material = new MeshPhysicalNodeMaterial({ metalness: 0, ior: 1.58, thickness: 0.12 })
   const solidity = Fn(() => select(comparedHalf(), comparedOpacity, ownOpacity))()
-  material.colorNode = Fn(() => select(comparedHalf(), compared, own))()
+  material.colorNode = shadedByCaps(
+    Fn(() => select(comparedHalf(), compared, own))(),
+    uniforms.capShadeSwitches,
+  )
   material.transmissionNode = float(1).sub(solidity)
   material.roughnessNode = mix(float(0.04), float(0.38), solidity)
   material.specularIntensityNode = float(1)
@@ -300,7 +316,7 @@ export function createSwitchShellMaterial(part: 'top' | 'bottom') {
 /** The per-key LED: a small white package on the PCB that lights in the effect's colour. */
 export function createLedMaterial() {
   const material = new MeshStandardNodeMaterial({ roughness: 0.4, metalness: 0 })
-  material.colorNode = vec3(0.92, 0.92, 0.9)
+  material.colorNode = shadedByCaps(vec3(0.92, 0.92, 0.9), uniforms.capShadeSwitches)
   material.emissiveNode = Fn(() => {
     const key = attribute('aKey', 'vec2')
     return glow(key.add(positionGeometry.xz), 3)
@@ -311,7 +327,7 @@ export function createLedMaterial() {
 /** Springs, contact leaves, click bars and pins. */
 export function createSwitchMetalMaterial() {
   const material = new MeshStandardNodeMaterial({ roughness: 0.3, metalness: 1 })
-  material.colorNode = vec3(0.8, 0.8, 0.82)
+  material.colorNode = shadedByCaps(vec3(0.8, 0.8, 0.82), uniforms.capShadeSwitches)
   return material
 }
 
@@ -346,7 +362,7 @@ export function createLowerLidMaterial(shape: Layout['case']) {
 
 export function createPlateMaterial() {
   const material = new MeshStandardNodeMaterial()
-  material.colorNode = uniforms.plate
+  material.colorNode = shadedByCaps(uniforms.plate, uniforms.capShadePlate)
   // A faint wash where the LEDs spill onto the plate.
   material.emissiveNode = glow(positionGeometry.xz, uniforms.ledReachPlate.mul(0.12))
   material.metalnessNode = uniforms.plateMetalness

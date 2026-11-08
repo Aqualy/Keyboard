@@ -77,16 +77,6 @@ describe('TypeHint', () => {
   })
 })
 
-describe('panel folding', () => {
-  it('folds and unfolds the side panel', () => {
-    useStage.setState({ panelFolded: false })
-    useStage.getState().togglePanel()
-    expect(useStage.getState().panelFolded).toBe(true)
-    useStage.getState().togglePanel()
-    expect(useStage.getState().panelFolded).toBe(false)
-  })
-})
-
 describe('PartLabel', () => {
   it('renders nothing with no part under the pointer', () => {
     useStage.setState({ hoveredPart: null })

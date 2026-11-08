@@ -75,18 +75,6 @@ export const OrbitIcon = () => (
   </svg>
 )
 
-export const ChevronIcon = ({ direction }: { direction: 'left' | 'right' }) => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-    <path
-      d={direction === 'left' ? 'M10 3 5 8l5 5' : 'm6 3 5 5-5 5'}
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-)
-
 /** A keycap seen from the front, which presses down and back up in the typing hint. */
 export const KeyIcon = () => (
   <svg width="34" height="22" viewBox="0 0 34 22" fill="none" aria-hidden="true">

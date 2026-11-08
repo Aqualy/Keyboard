@@ -213,10 +213,6 @@ button {
   }
 }
 
-.panel-fold {
-  display: none;
-}
-
 .part-label {
   position: absolute;
   padding: 7px 11px;
@@ -313,6 +309,14 @@ button {
 }
 
 /* Panel */
+
+.rail {
+  display: none;
+}
+
+.panel-content {
+  display: contents;
+}
 
 .panel {
   position: absolute;
@@ -775,7 +779,6 @@ button {
     right: auto;
     display: flex;
     flex-direction: column;
-    width: clamp(340px, 30vw, 440px);
     padding: var(--gutter) 0 var(--gutter) var(--gutter);
   }
 
@@ -829,44 +832,107 @@ button {
   .hints {
     left: calc(var(--stage-inset-left, 0px) + 12px);
     bottom: var(--gutter);
-    transition: left 0.45s ease;
   }
 
+  /*
+   * The menu rests as a narrow strip and folds out over the stage on hover, or when keyboard
+   * focus moves into it. Its content keeps its full width while the panel's width animates, so
+   * nothing reflows; the panel only clips it.
+   */
   .panel {
+    --menu-width: clamp(340px, 30vw, 440px);
+    --rail-width: 56px;
+    width: calc(var(--gutter) + var(--rail-width));
+    overflow: hidden;
     transition:
+      width 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
       opacity 0.3s ease,
-      transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+      transform 0.45s ease;
   }
 
-  .app[data-folded='true'] .panel {
-    transform: translateX(-100%);
+  .panel:hover,
+  .panel:has(:focus-visible) {
+    width: calc(var(--gutter) + var(--menu-width));
+    /* Open, the whole panel holds the pointer, so the gaps between cards don't fold it shut. */
+    pointer-events: auto;
   }
 
-  /* Stays at the panel's edge, so folded it waits at the left of the screen to bring it back. */
-  .panel-fold {
+  .panel-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: var(--menu-width);
+    min-height: 0;
+    opacity: 0;
+    transform: translateX(-24px);
+    transition:
+      opacity 0.25s ease,
+      transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .panel:not(:hover):not(:has(:focus-visible)) .panel-content * {
+    pointer-events: none;
+  }
+
+  .panel:hover .panel-content,
+  .panel:has(:focus-visible) .panel-content {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 0.3s ease 0.08s,
+      transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .rail {
     position: absolute;
     top: var(--gutter);
-    left: 100%;
+    bottom: var(--gutter);
+    left: var(--gutter);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: var(--rail-width);
+    pointer-events: auto;
+    transition: opacity 0.25s ease;
+  }
+
+  .panel:hover .rail,
+  .panel:has(:focus-visible) .rail {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .rail-item {
     display: grid;
+    flex: 1 1 0;
     place-items: center;
-    width: 32px;
-    height: 44px;
-    margin-left: 8px;
+    min-height: 0;
     padding: 0;
     border: 0;
     border-radius: var(--radius);
     background: var(--card);
-    pointer-events: auto;
-    transition: background-color 0.2s;
+    color: var(--muted);
+    font: 500 11px var(--mono);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
   }
 
-  .app[data-folded='true'] .panel-fold {
-    margin-left: 0;
-    border-radius: 0 var(--radius) var(--radius) 0;
+  .rail-item[data-open='true'] {
+    color: var(--ink);
   }
 
-  .panel-fold:hover {
-    background: #e4e4e4;
+  .rail-test {
+    display: grid;
+    flex: none;
+    place-items: center;
+    height: var(--rail-width);
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius);
+    background: var(--blue);
+    color: #fff;
   }
 }
 

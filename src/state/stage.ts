@@ -64,9 +64,6 @@ interface StageStore {
   /** Set by the first key pressed on the board, which retires the typing hint. */
   hasTyped: boolean
   markTyped: () => void
-  /** The side panel folded away, leaving the stage to the board. */
-  panelFolded: boolean
-  togglePanel: () => void
   resetView: () => void
   setHoveredPart: (part: PartHover | null) => void
 }
@@ -107,8 +104,6 @@ export const useStage = create<StageStore>((set) => ({
   markOrbited: () => set({ hasOrbited: true }),
   hasTyped: false,
   markTyped: () => set((state) => (state.hasTyped ? state : { hasTyped: true })),
-  panelFolded: false,
-  togglePanel: () => set((state) => ({ panelFolded: !state.panelFolded })),
   resetView: () => set((state) => ({ resetRequest: state.resetRequest + 1 })),
   setHoveredPart: (hoveredPart) => set({ hoveredPart }),
 }))

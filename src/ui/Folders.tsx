@@ -24,6 +24,7 @@ import { KEYSETS } from '../data/keysets'
 import { matchPreset, useConfig } from '../state/config'
 import { SECTIONS, useStage, type Section } from '../state/stage'
 import { Pills, Specs, Swatches } from './controls'
+import { ArrowIcon } from './icons'
 
 const ZONES = [
   { id: 'alpha', name: 'Alphas' },
@@ -294,6 +295,43 @@ const FOLDERS: Record<Section, () => ReactNode> = {
   plate: PlateFolder,
   lighting: LightingFolder,
   desk: DeskFolder,
+}
+
+/**
+ * The narrow strip the side menu folds into on wide screens. It names each folder, so it reads as
+ * a menu, and keeps Test in reach. Hovering it folds the menu out; a click opens that folder.
+ * It repeats controls the menu already has, so it stays out of the tab order and the
+ * accessibility tree; keyboard users reach the full menu directly.
+ */
+export function FolderRail() {
+  const section = useStage((state) => state.section)
+  const setSection = useStage((state) => state.setSection)
+  const setMode = useStage((state) => state.setMode)
+  return (
+    <nav className="rail" aria-hidden="true">
+      {SECTIONS.map((id) => (
+        <button
+          key={id}
+          type="button"
+          tabIndex={-1}
+          className="rail-item"
+          data-open={id === section}
+          onClick={() => setSection(id)}
+        >
+          {TITLES[id]}
+        </button>
+      ))}
+      <button
+        type="button"
+        tabIndex={-1}
+        className="rail-test"
+        title="Test"
+        onClick={() => setMode('test')}
+      >
+        <ArrowIcon />
+      </button>
+    </nav>
+  )
 }
 
 export function Folders() {

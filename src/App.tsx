@@ -13,11 +13,10 @@ import { layoutOf, matchPreset, useConfig } from './state/config'
 import { keysetOf } from './data/keysets'
 import { isDark, useStage } from './state/stage'
 import { TypingTest } from './test/TypingTest'
-import { Folders } from './ui/Folders'
+import { FolderRail, Folders } from './ui/Folders'
 import { ArrowIcon } from './ui/icons'
 import { Cinematic } from './ui/Cinematic'
 import { OrbitHint, PartLabel, StageTools, TypeHint, VolumeLabel } from './ui/StageOverlay'
-import { ChevronIcon } from './ui/icons'
 
 const Stage = lazy(() => import('./scene/Stage').then(({ Stage }) => ({ default: Stage })))
 
@@ -78,7 +77,7 @@ const SIDE_PANEL = '(min-width: 1001px) and (min-height: 501px)'
  * Measures the panel floating over the stage. The camera keeps the board beside the side panel on
  * wide screens, and above the whole panel on narrow ones, where it spans the bottom.
  */
-function usePanelInset(mode: string, folded: boolean) {
+function usePanelInset(mode: string) {
   const panelRef = useRef<HTMLDivElement>(null)
   const [panelHeight, setPanelHeight] = useState(0)
   const setStageInset = useStage((state) => state.setStageInset)
@@ -92,7 +91,9 @@ function usePanelInset(mode: string, folded: boolean) {
       const side = floating && window.matchMedia(SIDE_PANEL).matches
       const height = floating && !side ? panel.offsetHeight : 0
       setPanelHeight(height)
-      setStageInset(height, side && !folded ? panel.offsetWidth : 0)
+      // The menu folds out over the stage, so the camera only keeps clear of the narrow strip.
+      const rail = panel.querySelector<HTMLElement>('.rail')
+      setStageInset(height, side && rail ? rail.getBoundingClientRect().right : 0)
     }
     measure()
     const observer = new ResizeObserver(measure)
@@ -102,7 +103,7 @@ function usePanelInset(mode: string, folded: boolean) {
       observer.disconnect()
       window.removeEventListener('resize', measure)
     }
-  }, [mode, folded, setStageInset])
+  }, [mode, setStageInset])
 
   return { panelRef, panelHeight }
 }
@@ -113,9 +114,7 @@ export default function App() {
   const dark = useStage(isDark)
   const knob = useStage((state) => state.knobHovered || state.knobActive)
   const supported = hasGraphicsSupport()
-  const folded = useStage((state) => state.panelFolded)
-  const togglePanel = useStage((state) => state.togglePanel)
-  const { panelRef, panelHeight } = usePanelInset(mode, folded)
+  const { panelRef, panelHeight } = usePanelInset(mode)
   const stageInset = useStage((state) => state.stageInset)
   const stageInsetLeft = useStage((state) => state.stageInsetLeft)
   const insets = {
@@ -131,7 +130,6 @@ export default function App() {
       data-ready={ready}
       data-dark={dark}
       data-knob={knob}
-      data-folded={folded}
       style={insets}
     >
       <div className="stage">
@@ -162,19 +160,11 @@ export default function App() {
         {mode === 'cinematic' && <Cinematic />}
       </div>
       <div className="panel" ref={panelRef}>
-        {/* Folds the side panel away for a clear view of the board, and back. */}
-        <button
-          type="button"
-          className="panel-fold"
-          aria-label={folded ? 'Show controls' : 'Hide controls'}
-          aria-expanded={!folded}
-          title={folded ? 'Show controls' : 'Hide controls'}
-          onClick={togglePanel}
-        >
-          <ChevronIcon direction={folded ? 'right' : 'left'} />
-        </button>
-        <Summary />
-        <Folders />
+        <FolderRail />
+        <div className="panel-content">
+          <Summary />
+          <Folders />
+        </div>
       </div>
     </main>
   )

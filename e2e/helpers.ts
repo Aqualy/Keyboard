@@ -14,6 +14,20 @@ export async function openConfigurator(page: Page, query = '') {
   await page.goto(`./${query}`)
   await expect(page.locator('.app')).toHaveAttribute('data-ready', 'true')
   await waitForStillCanvas(page)
+  await showMenu(page)
+}
+
+/**
+ * On wide screens the menu rests as a narrow strip and folds out on hover, so hover it first, as
+ * a person would. Elsewhere the menu is always open and this does nothing.
+ */
+export async function showMenu(page: Page) {
+  const rail = page.locator('.rail')
+  if (!(await rail.isVisible())) return
+  // Once open, the menu covers the strip, so move the mouse there rather than hover the strip.
+  const box = (await rail.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 3)
+  await expect(page.locator('.panel-content')).toHaveCSS('opacity', '1')
 }
 
 export const canvasImage = (page: Page) => page.locator('canvas').screenshot()
@@ -62,6 +76,7 @@ const FOLDER_OF: Record<string, string> = {
 
 /** Opens a configurator folder by its tab. */
 export async function openFolder(page: Page, folder: string) {
+  await showMenu(page)
   const tab = page.locator('.folder-tab', { has: page.getByText(folder, { exact: true }) })
   await tab.click()
   await expect(tab).toHaveAttribute('aria-expanded', 'true')

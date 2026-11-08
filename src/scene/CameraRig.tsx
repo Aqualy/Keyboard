@@ -41,12 +41,8 @@ export function CameraRig() {
   const free = (size.height - inset) / size.height
   // On wide screens the tools stand at the right edge, so the board keeps clear of them on both
   // sides and stays centred. The margin is the gutter, the 44px tools and a little air.
-  // With the side panel folded the tools still stand there, so the margin stays.
-  const folded = useStage(
-    (state) => state.panelFolded && (state.mode === 'configure' || state.mode === 'exploded'),
-  )
   const toolsMargin =
-    (inset > 0 || insetLeft > 0 || folded) && size.width > 1000
+    (inset > 0 || insetLeft > 0) && size.width > 1000
       ? Math.min(48, Math.max(16, size.width * 0.034)) + 56
       : 0
   const fitAspect = (size.width - insetLeft - 2 * toolsMargin) / size.height

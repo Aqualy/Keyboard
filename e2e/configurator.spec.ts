@@ -5,6 +5,7 @@ import {
   openConfigurator,
   openFolder,
   sameImage,
+  showMenu,
   stageBox,
   trackErrors,
   waitForStillCanvas,
@@ -256,17 +257,16 @@ test('releases every held key when the window loses focus', async ({ page }) => 
   expect(errors).toEqual([])
 })
 
-test('the side panel folds away and comes back', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop', 'Only wide screens have the side panel')
+test('the side menu rests as a strip and folds out on hover', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'Only wide screens have the side menu')
   await openConfigurator(page)
-  const before = await canvasImage(page)
-  await page.getByRole('button', { name: 'Hide controls' }).click()
-  await expect(page.locator('.app')).toHaveAttribute('data-folded', 'true')
-  await waitForStillCanvas(page)
-  expect(sameImage(await canvasImage(page), before)).toBe(false)
-  await page.getByRole('button', { name: 'Show controls' }).click()
-  await expect(page.locator('.app')).toHaveAttribute('data-folded', 'false')
+  const panel = page.locator('.panel')
+  const narrow = (await panel.boundingBox())!.width
+  await showMenu(page)
+  await expect.poll(async () => (await panel.boundingBox())!.width).toBeGreaterThan(narrow + 200)
   await expect(page.locator('.folder-tab', { hasText: 'Style' })).toBeVisible()
+  await page.mouse.move(1200, 450)
+  await expect.poll(async () => (await panel.boundingBox())!.width).toBeLessThan(narrow + 10)
 })
 
 test('the typing hint retires after the first key press', async ({ page }) => {

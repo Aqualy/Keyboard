@@ -71,9 +71,12 @@ function Summary() {
   )
 }
 
+/** Wide screens put the panel in a full-height column down the left. Matches index.css. */
+const SIDE_PANEL = '(min-width: 1001px) and (min-height: 501px)'
+
 /**
- * Measures the panel floating over the stage. The camera keeps the board above the folders, and
- * on narrow screens above the whole panel, where the title row spans the width.
+ * Measures the panel floating over the stage. The camera keeps the board beside the side panel on
+ * wide screens, and above the whole panel on narrow ones, where it spans the bottom.
  */
 function usePanelInset(mode: string) {
   const panelRef = useRef<HTMLDivElement>(null)
@@ -86,11 +89,10 @@ function usePanelInset(mode: string) {
     const measure = () => {
       const floating =
         getComputedStyle(panel).position === 'absolute' && mode !== 'test' && mode !== 'cinematic'
-      const folders = panel.querySelector<HTMLElement>('.folders')
-      const wide = window.innerWidth > 1000
-      const height = floating ? panel.offsetHeight : 0
+      const side = floating && window.matchMedia(SIDE_PANEL).matches
+      const height = floating && !side ? panel.offsetHeight : 0
       setPanelHeight(height)
-      setStageInset(floating ? (wide && folders ? folders.offsetHeight + 12 : height) : 0)
+      setStageInset(height, side ? panel.offsetWidth : 0)
     }
     measure()
     const observer = new ResizeObserver(measure)
@@ -116,9 +118,11 @@ export default function App() {
   const supported = hasGraphicsSupport()
   const { panelRef, panelHeight } = usePanelInset(mode)
   const stageInset = useStage((state) => state.stageInset)
+  const stageInsetLeft = useStage((state) => state.stageInsetLeft)
   const insets = {
     '--panel-height': `${panelHeight}px`,
     '--stage-inset': `${stageInset}px`,
+    '--stage-inset-left': `${stageInsetLeft}px`,
   } as CSSProperties
 
   return (

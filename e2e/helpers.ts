@@ -91,11 +91,10 @@ export async function choose(page: Page, group: string, option: string) {
 export async function stageBox(page: Page) {
   const box = await page.locator('canvas').boundingBox()
   if (!box) throw new Error('Canvas is not visible')
-  const inset = await page.evaluate(
-    () =>
-      parseFloat(
-        getComputedStyle(document.querySelector('.app')!).getPropertyValue('--stage-inset'),
-      ) || 0,
-  )
-  return { ...box, height: box.height - inset }
+  const [inset, insetLeft] = await page.evaluate(() => {
+    const style = getComputedStyle(document.querySelector('.app')!)
+    const px = (name: string) => parseFloat(style.getPropertyValue(name)) || 0
+    return [px('--stage-inset'), px('--stage-inset-left')]
+  })
+  return { ...box, x: box.x + insetLeft, width: box.width - insetLeft, height: box.height - inset }
 }

@@ -229,7 +229,7 @@ test('clicking a key on the board presses it', async ({ page, hasTouch }) => {
   await openConfigurator(page)
   const box = await stageBox(page)
   const before = await canvasImage(page)
-  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.42)
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5)
   await page.mouse.down()
   await page.waitForTimeout(300)
   expect(sameImage(await canvasImage(page), before)).toBe(false)

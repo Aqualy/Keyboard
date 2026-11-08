@@ -754,6 +754,75 @@ button {
   background: var(--pill);
 }
 
+/* Wide screens: the panel stands down the left, so a long folder like Style gets the full height */
+
+@media (min-width: 1001px) and (min-height: 501px) {
+  .panel {
+    top: 0;
+    right: auto;
+    display: flex;
+    flex-direction: column;
+    width: clamp(340px, 30vw, 440px);
+    padding: var(--gutter) 0 var(--gutter) var(--gutter);
+  }
+
+  .app[data-mode='test'] .panel,
+  .app[data-mode='cinematic'] .panel {
+    transform: translateX(-40px);
+  }
+
+  /* Test sits beside the title, so the folders keep as much height as possible. */
+  .summary {
+    margin-bottom: 18px;
+  }
+
+  .test-button {
+    width: 160px;
+    height: 48px;
+  }
+
+  /* Closed folders stack as rows; the open one fills what is left and scrolls inside. */
+  .folders {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+  }
+
+  .folder {
+    flex: none;
+    border-radius: var(--radius);
+    transition: none;
+  }
+
+  .folder[data-open='true'] {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+  }
+
+  .folder-tab {
+    min-height: 48px;
+    padding: 16px 18px 12px;
+  }
+
+  .folder-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .orbit-hint {
+    left: calc(var(--stage-inset-left, 0px) + 12px);
+    bottom: var(--gutter);
+  }
+
+  .cutaway-stage {
+    left: calc(var(--stage-inset-left, 0px) + 12px);
+  }
+}
+
 /* Tablet and phone: cards become a swipeable row, Test stays reachable */
 
 @media (max-width: 1000px) {

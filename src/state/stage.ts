@@ -46,7 +46,9 @@ interface StageStore {
   hideVolume: () => void
   /** Height of the controls over the bottom of the stage, in px, which the camera frames above. */
   stageInset: number
-  setStageInset: (stageInset: number) => void
+  /** Width of the controls down the left of the stage, in px, which the camera frames beside. */
+  stageInsetLeft: number
+  setStageInset: (stageInset: number, stageInsetLeft?: number) => void
   /** A switch held on the left half of the board, to hear against the chosen one on the right. */
   compare: SwitchId | null
   setCompare: (compare: SwitchId | null) => void
@@ -87,7 +89,8 @@ export const useStage = create<StageStore>((set) => ({
   heatmap: null,
   compare: null,
   stageInset: 0,
-  setStageInset: (stageInset) => set({ stageInset }),
+  stageInsetLeft: 0,
+  setStageInset: (stageInset, stageInsetLeft = 0) => set({ stageInset, stageInsetLeft }),
   setCompare: (compare) => set({ compare }),
   setHeatmap: (heatmap) => set({ heatmap }),
   setKnobActive: (knobActive) => set({ knobActive }),

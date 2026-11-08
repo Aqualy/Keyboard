@@ -37,12 +37,15 @@ export function CameraRig() {
   const domElement = useThree((state) => state.gl.domElement)
   const size = useThree((state) => state.size)
   const inset = useStage((state) => Math.min(state.stageInset, size.height * 0.6))
+  const insetLeft = useStage((state) => Math.min(state.stageInsetLeft, size.width * 0.5))
   const free = (size.height - inset) / size.height
   // On wide screens the tools stand at the right edge, so the board keeps clear of them on both
   // sides and stays centred. The margin is the gutter, the 44px tools and a little air.
   const toolsMargin =
-    inset > 0 && size.width > 1000 ? Math.min(48, Math.max(16, size.width * 0.034)) + 56 : 0
-  const fitAspect = (size.width - 2 * toolsMargin) / size.height
+    (inset > 0 || insetLeft > 0) && size.width > 1000
+      ? Math.min(48, Math.max(16, size.width * 0.034)) + 56
+      : 0
+  const fitAspect = (size.width - insetLeft - 2 * toolsMargin) / size.height
   // A string, so the selector stays stable between renders.
   const shotName = useStage((state) => {
     const arrangement = arrangementFor(state.mode, state.section)
@@ -99,16 +102,23 @@ export function CameraRig() {
     )
   }, [controls, shotName, fitAspect, free, resetRequest, scale])
 
-  // Shifts the picture up by half the controls' height, so the framed shot is centred in the
-  // free space above them while the scene still runs on behind them.
+  // Shifts the picture up by half the controls' height, or right by half their width, so the
+  // framed shot is centred in the free space while the scene still runs on behind them.
   useEffect(() => {
     const perspective = camera as THREE.PerspectiveCamera
-    if (inset > 0) {
-      perspective.setViewOffset(size.width, size.height, 0, inset / 2, size.width, size.height)
+    if (inset > 0 || insetLeft > 0) {
+      perspective.setViewOffset(
+        size.width,
+        size.height,
+        -insetLeft / 2,
+        inset / 2,
+        size.width,
+        size.height,
+      )
     } else {
       perspective.clearViewOffset()
     }
-  }, [camera, inset, size.width, size.height])
+  }, [camera, inset, insetLeft, size.width, size.height])
 
   useEffect(() => {
     controls.enabled = !knobActive

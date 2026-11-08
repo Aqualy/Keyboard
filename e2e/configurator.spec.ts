@@ -145,6 +145,22 @@ test('the switch cutaway presses along with the keyboard', async ({ page }) => {
   await expect(cutaway).toHaveAttribute('data-pressed', 'false')
 })
 
+test('cinematic mode hides every control and leaves with Esc', async ({ page }) => {
+  const errors = trackErrors(page)
+  await openConfigurator(page)
+  await page.getByRole('button', { name: 'Cinematic mode' }).click()
+  await expect(page.locator('.app')).toHaveAttribute('data-mode', 'cinematic')
+  await expect(page.locator('.panel')).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Explode keyboard' })).toBeHidden()
+  const first = await canvasImage(page)
+  await page.waitForTimeout(1500)
+  expect(sameImage(await canvasImage(page), first)).toBe(false)
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.app')).toHaveAttribute('data-mode', 'configure')
+  await expect(page.getByRole('button', { name: 'Test' })).toBeVisible()
+  expect(errors).toEqual([])
+})
+
 test('the reactive effect lights a key when it is pressed', async ({ page }) => {
   const errors = trackErrors(page)
   await openConfigurator(page, '?rgb=reactive')

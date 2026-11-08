@@ -86,8 +86,15 @@ export async function choose(page: Page, group: string, option: string) {
   await fieldset.getByRole('radio', { name: option, exact: true }).check({ force: true })
 }
 
+/** The part of the stage a visitor can see: the canvas above the controls floating over it. */
 export async function stageBox(page: Page) {
   const box = await page.locator('canvas').boundingBox()
   if (!box) throw new Error('Canvas is not visible')
-  return box
+  const inset = await page.evaluate(
+    () =>
+      parseFloat(
+        getComputedStyle(document.querySelector('.app')!).getPropertyValue('--stage-inset'),
+      ) || 0,
+  )
+  return { ...box, height: box.height - inset }
 }

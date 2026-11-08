@@ -1,10 +1,20 @@
-import { Component, lazy, Suspense, type ReactNode } from 'react'
+import {
+  Component,
+  lazy,
+  Suspense,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import { COLOURWAYS } from './data/options'
 import { layoutOf, matchColourway, useConfig } from './state/config'
 import { isDark, useStage } from './state/stage'
 import { TypingTest } from './test/TypingTest'
 import { Folders } from './ui/Folders'
 import { ArrowIcon } from './ui/icons'
+import { Cinematic } from './ui/Cinematic'
 import { SwitchCutaway } from './ui/SwitchCutaway'
 import { OrbitHint, PartLabel, StageTools, VolumeLabel } from './ui/StageOverlay'
 
@@ -59,6 +69,40 @@ function Summary() {
   )
 }
 
+/**
+ * Measures the panel floating over the stage. The camera keeps the board above the folders, and
+ * on narrow screens above the whole panel, where the title row spans the width.
+ */
+function usePanelInset(mode: string) {
+  const panelRef = useRef<HTMLDivElement>(null)
+  const [panelHeight, setPanelHeight] = useState(0)
+  const setStageInset = useStage((state) => state.setStageInset)
+
+  useLayoutEffect(() => {
+    const panel = panelRef.current
+    if (!panel) return
+    const measure = () => {
+      const floating =
+        getComputedStyle(panel).position === 'absolute' && mode !== 'test' && mode !== 'cinematic'
+      const folders = panel.querySelector<HTMLElement>('.folders')
+      const wide = window.innerWidth > 1000
+      const height = floating ? panel.offsetHeight : 0
+      setPanelHeight(height)
+      setStageInset(floating ? (wide && folders ? folders.offsetHeight + 12 : height) : 0)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(panel)
+    window.addEventListener('resize', measure)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [mode, setStageInset])
+
+  return { panelRef, panelHeight }
+}
+
 export default function App() {
   const mode = useStage((state) => state.mode)
   const ready = useStage((state) => state.ready)
@@ -68,9 +112,22 @@ export default function App() {
   )
   const knob = useStage((state) => state.knobHovered || state.knobActive)
   const supported = hasGraphicsSupport()
+  const { panelRef, panelHeight } = usePanelInset(mode)
+  const stageInset = useStage((state) => state.stageInset)
+  const insets = {
+    '--panel-height': `${panelHeight}px`,
+    '--stage-inset': `${stageInset}px`,
+  } as CSSProperties
 
   return (
-    <main className="app" data-mode={mode} data-ready={ready} data-dark={dark} data-knob={knob}>
+    <main
+      className="app"
+      data-mode={mode}
+      data-ready={ready}
+      data-dark={dark}
+      data-knob={knob}
+      style={insets}
+    >
       <div className="stage">
         {supported ? (
           <StageBoundary>
@@ -94,8 +151,9 @@ export default function App() {
           </>
         )}
         {mode === 'test' && <TypingTest />}
+        {mode === 'cinematic' && <Cinematic />}
       </div>
-      <div className="panel">
+      <div className="panel" ref={panelRef}>
         <Summary />
         <Folders />
       </div>

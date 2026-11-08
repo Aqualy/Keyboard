@@ -76,8 +76,14 @@ button {
 
 /* Stage */
 
+/*
+ * The stage fills the screen and the panel floats over its bottom, so the board uses every bit
+ * of space and runs on behind the controls instead of stopping in a hard line above them. The
+ * camera frames the board above the folders (--stage-inset, measured in App).
+ */
 .stage {
-  position: relative;
+  position: absolute;
+  inset: 0;
   min-height: 0;
 }
 
@@ -107,7 +113,8 @@ button {
 
 .tools {
   position: absolute;
-  top: 50%;
+  /* Centred in the space above the title row, so the Test button never covers them. */
+  top: calc((100% - var(--panel-height, 0px)) / 2);
   right: var(--gutter);
   display: flex;
   flex-direction: column;
@@ -140,7 +147,7 @@ button {
 
 .orbit-hint {
   position: absolute;
-  bottom: 12px;
+  bottom: calc(var(--panel-height, 0px) + 8px);
   left: var(--gutter);
   display: grid;
   justify-items: center;
@@ -179,6 +186,77 @@ button {
   transform: none;
 }
 
+/* Cinematic mode: nothing but the board, letterboxed, with a dip to black between shots. */
+
+.app[data-mode='cinematic'] .tools,
+.app[data-mode='cinematic'] .part-label {
+  display: none;
+}
+
+.app[data-mode='cinematic'] {
+  --stage: #080808;
+}
+
+.cinema {
+  position: absolute;
+  inset: 0;
+  cursor: none;
+}
+
+.cinema::before,
+.cinema::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 11vh;
+  background: #000;
+  animation: letterbox 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.cinema::before {
+  top: 0;
+  transform-origin: top;
+}
+
+.cinema::after {
+  bottom: 0;
+  transform-origin: bottom;
+}
+
+@keyframes letterbox {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+.cinema-fade {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cinema-hint {
+  position: absolute;
+  bottom: calc(11vh + 16px);
+  left: 50%;
+  margin: 0;
+  color: #bbb;
+  font: 500 11px var(--mono);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  animation: hint-out 0.8s ease 3.5s both;
+}
+
+@keyframes hint-out {
+  to {
+    opacity: 0;
+  }
+}
+
 /* Switch cutaway: beside the lifted switches on wide screens, in the folder on narrow ones. */
 
 .cutaway {
@@ -202,7 +280,7 @@ button {
 
 .cutaway-stage {
   position: absolute;
-  top: 50%;
+  top: calc((100% - var(--stage-inset, 0px)) / 2);
   left: var(--gutter);
   width: 210px;
   padding: 16px 18px 18px;
@@ -224,23 +302,37 @@ button {
 /* Panel */
 
 .panel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   min-width: 0;
   padding: 0 var(--gutter);
+  /* Only the controls take the pointer, so the board can be orbited around them. */
+  pointer-events: none;
   transition:
     opacity 0.3s ease,
     transform 0.45s ease;
 }
 
-.app[data-mode='test'] {
-  grid-template-rows: minmax(0, 1fr) 0;
-}
-
-.app[data-mode='test'] .panel {
+.app[data-mode='test'] .panel,
+.app[data-mode='cinematic'] .panel {
   overflow: hidden;
   padding-block: 0;
   opacity: 0;
   pointer-events: none;
   transform: translateY(40px);
+  /* Its controls take the pointer themselves, so hide them outright once faded. */
+  visibility: hidden;
+  transition:
+    opacity 0.3s ease,
+    transform 0.45s ease,
+    visibility 0s 0.45s;
+}
+
+.summary > *,
+.folders {
+  pointer-events: auto;
 }
 
 .summary {
@@ -809,13 +901,25 @@ button {
 /* Short landscape screens: the panel moves beside the stage and scrolls */
 
 @media (max-height: 500px) and (orientation: landscape) {
+  /* Here the panel sits beside the stage, so both go back into the grid. */
+  .stage,
+  .panel {
+    position: relative;
+    inset: auto;
+  }
+
+  .panel {
+    pointer-events: auto;
+  }
+
   .app,
   .app[data-mode='test'] {
     grid-template-rows: minmax(0, 1fr);
     grid-template-columns: minmax(0, 1fr) 300px;
   }
 
-  .app[data-mode='test'] {
+  .app[data-mode='test'],
+  .app[data-mode='cinematic'] {
     grid-template-columns: minmax(0, 1fr) 0;
   }
 

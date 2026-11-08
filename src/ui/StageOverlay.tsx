@@ -1,5 +1,5 @@
 import { useStage } from '../state/stage'
-import { ExplodeIcon, OrbitIcon, ResetIcon, SoundOffIcon, SoundOnIcon } from './icons'
+import { ExplodeIcon, FilmIcon, OrbitIcon, ResetIcon, SoundOffIcon, SoundOnIcon } from './icons'
 
 export function StageTools() {
   const mode = useStage((state) => state.mode)
@@ -34,6 +34,17 @@ export function StageTools() {
           <ResetIcon />
         </button>
       )}
+      {mode !== 'test' && (
+        <button
+          type="button"
+          className="tool"
+          aria-label="Cinematic mode"
+          title="Cinematic"
+          onClick={() => setMode('cinematic')}
+        >
+          <FilmIcon />
+        </button>
+      )}
       <button
         type="button"
         className="tool"
@@ -51,7 +62,7 @@ export function StageTools() {
 export function OrbitHint() {
   const hasOrbited = useStage((state) => state.hasOrbited)
   const mode = useStage((state) => state.mode)
-  const hidden = hasOrbited || mode === 'test'
+  const hidden = hasOrbited || mode === 'test' || mode === 'cinematic'
   return (
     <div className="orbit-hint" data-hidden={hidden} aria-hidden={hidden}>
       <OrbitIcon />

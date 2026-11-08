@@ -1,11 +1,12 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import CameraControls from 'camera-controls'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { motion, prefersReducedMotion } from '../motion'
 import { layoutOf, useConfig } from '../state/config'
 import { useStage } from '../state/stage'
 import { fitDistance } from './camera'
+import { cinematicFrame, cinematicShots } from './cinematic'
 import { arrangementFor } from './layers'
 
 CameraControls.install({ THREE })
@@ -35,10 +36,18 @@ const SHOTS: Record<string, Shot> = {
 export function CameraRig() {
   const camera = useThree((state) => state.camera)
   const domElement = useThree((state) => state.gl.domElement)
-  const aspect = useThree((state) => state.size.width / state.size.height)
+  const size = useThree((state) => state.size)
+  const inset = useStage((state) => Math.min(state.stageInset, size.height * 0.6))
+  const free = (size.height - inset) / size.height
+  // On wide screens the tools stand at the right edge, so the board keeps clear of them on both
+  // sides and stays centred. The margin is the gutter, the 44px tools and a little air.
+  const toolsMargin =
+    inset > 0 && size.width > 1000 ? Math.min(48, Math.max(16, size.width * 0.034)) + 56 : 0
+  const fitAspect = (size.width - 2 * toolsMargin) / size.height
   // A string, so the selector stays stable between renders.
   const shotName = useStage((state) => {
     const arrangement = arrangementFor(state.mode, state.section)
+    if (state.mode === 'cinematic') return 'cinematic'
     if (typeof arrangement === 'object') return `isolate-${arrangement.isolate}`
     return state.mode === 'configure' && state.section === 'desk' ? 'desk' : state.mode
   })
@@ -72,7 +81,9 @@ export function CameraRig() {
 
   useEffect(() => {
     const shot = SHOTS[shotName]
-    const distance = fitDistance(shot.width * scale, shot.height * scale, aspect)
+    // Cinematic mode drives the camera itself, frame by frame.
+    if (!shot) return
+    const distance = fitDistance(shot.width * scale, shot.height * scale, fitAspect, free)
     controls.minDistance = distance * 0.45
     controls.maxDistance = distance * 1.8
     const [dx, dy, dz] = shot.direction
@@ -87,7 +98,18 @@ export function CameraRig() {
       tz,
       !prefersReducedMotion(),
     )
-  }, [controls, shotName, aspect, resetRequest, scale])
+  }, [controls, shotName, fitAspect, free, resetRequest, scale])
+
+  // Shifts the picture up by half the controls' height, so the framed shot is centred in the
+  // free space above them while the scene still runs on behind them.
+  useEffect(() => {
+    const perspective = camera as THREE.PerspectiveCamera
+    if (inset > 0) {
+      perspective.setViewOffset(size.width, size.height, 0, inset / 2, size.width, size.height)
+    } else {
+      perspective.clearViewOffset()
+    }
+  }, [camera, inset, size.width, size.height])
 
   useEffect(() => {
     controls.enabled = !knobActive
@@ -100,7 +122,28 @@ export function CameraRig() {
     controls.smoothTime = motion(0.55)
   }, [controls])
 
+  const layout = useConfig((state) => layoutOf(state.config))
+  const shots = useMemo(() => cinematicShots(layout), [layout])
+  const cinematicStart = useRef(0)
+  const fadeElement = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    if (shotName !== 'cinematic') return
+    cinematicStart.current = performance.now()
+    fadeElement.current = document.querySelector<HTMLElement>('.cinema-fade')
+    controls.enabled = false
+    return () => {
+      controls.enabled = true
+    }
+  }, [controls, shotName])
+
   useFrame((_, delta) => {
+    if (shotName === 'cinematic') {
+      const seconds = (performance.now() - cinematicStart.current) / 1000
+      const frame = cinematicFrame(shots, seconds, prefersReducedMotion())
+      void controls.setLookAt(...frame.position, ...frame.target, false)
+      fadeElement.current ??= document.querySelector<HTMLElement>('.cinema-fade')
+      if (fadeElement.current) fadeElement.current.style.opacity = String(frame.fade)
+    }
     controls.update(delta)
   })
 

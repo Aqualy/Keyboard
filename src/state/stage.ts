@@ -2,7 +2,8 @@ import { create } from 'zustand'
 import type { SwitchId } from '../data/options'
 import type { KeyHeat } from '../test/typing'
 
-export type StageMode = 'configure' | 'exploded' | 'test'
+/** Cinematic is a hands-off loop of camera moves, with every control hidden. */
+export type StageMode = 'configure' | 'exploded' | 'test' | 'cinematic'
 
 /** The open folder in the configurator. One part of the keyboard is edited at a time. */
 export const SECTIONS = [
@@ -51,6 +52,9 @@ interface StageStore {
   /** Turns the volume by some clicks at a point on the stage. */
   turnVolume: (clicks: number, at: { x: number; y: number }) => void
   hideVolume: () => void
+  /** Height of the controls over the bottom of the stage, in px, which the camera frames above. */
+  stageInset: number
+  setStageInset: (stageInset: number) => void
   /** A switch held on the left half of the board, to hear against the chosen one on the right. */
   compare: SwitchId | null
   setCompare: (compare: SwitchId | null) => void
@@ -90,6 +94,8 @@ export const useStage = create<StageStore>((set) => ({
   hideVolume: () => set({ volumeLabel: null }),
   heatmap: null,
   compare: null,
+  stageInset: 0,
+  setStageInset: (stageInset) => set({ stageInset }),
   setCompare: (compare) => set({ compare }),
   setHeatmap: (heatmap) => set({ heatmap }),
   setKnobActive: (knobActive) => set({ knobActive }),
@@ -104,7 +110,7 @@ export const useStage = create<StageStore>((set) => ({
 
 /** The room goes dark while lighting is being configured, so the LEDs can be seen. */
 export const isDark = (state: Pick<StageStore, 'mode' | 'section'>) =>
-  state.mode === 'configure' && state.section === 'lighting'
+  (state.mode === 'configure' && state.section === 'lighting') || state.mode === 'cinematic'
 
 /** Keys left of the board's centre play the compared switch, the rest play the chosen one. */
 export const switchForKey = (x: number, chosen: SwitchId, compare: SwitchId | null) =>

@@ -18,6 +18,13 @@ function Icon({ children }: { children: ReactNode }) {
   )
 }
 
+export const FilmIcon = () => (
+  <Icon>
+    <rect x="3.5" y="5" width="17" height="14" rx="1.5" />
+    <path d="m10 9.5 4.5 2.5-4.5 2.5z" />
+  </Icon>
+)
+
 export const ExplodeIcon = () => (
   <Icon>
     <path d="M4 7.5 12 4l8 3.5-8 3.5z" />

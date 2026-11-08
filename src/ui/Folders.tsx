@@ -24,7 +24,6 @@ import { KEYSETS } from '../data/keysets'
 import { matchPreset, useConfig } from '../state/config'
 import { SECTIONS, useStage, type Section } from '../state/stage'
 import { Pills, Specs, Swatches } from './controls'
-import { SwitchCutaway } from './SwitchCutaway'
 
 const ZONES = [
   { id: 'alpha', name: 'Alphas' },
@@ -211,7 +210,6 @@ function SwitchesFolder() {
         <CompareButton />
       </div>
       <Specs rows={selected.specs} />
-      <SwitchCutaway className="cutaway-folder" />
     </Folder>
   )
 }

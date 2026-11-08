@@ -145,10 +145,18 @@ button {
   color: var(--card);
 }
 
-.orbit-hint {
+/* The 360 and typing hints stand together in the stage's lower left corner. */
+.hints {
   position: absolute;
   bottom: calc(var(--panel-height, 0px) + 8px);
   left: var(--gutter);
+  display: flex;
+  align-items: end;
+  gap: 22px;
+  pointer-events: none;
+}
+
+.orbit-hint {
   display: grid;
   justify-items: center;
   gap: 2px;
@@ -158,8 +166,55 @@ button {
   transition: opacity 0.4s ease;
 }
 
-.orbit-hint[data-hidden='true'] {
+.orbit-hint[data-hidden='true'],
+.type-hint[data-hidden='true'] {
   opacity: 0;
+}
+
+.type-hint {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font: 500 11px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: opacity 0.4s ease;
+}
+
+/* The cap presses now and then, so the hint reads as a key at a glance. */
+.key-icon-cap {
+  animation: key-press 2.4s ease-in-out infinite;
+}
+
+@keyframes key-press {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0);
+  }
+
+  78%,
+  86% {
+    transform: translateY(2.5px);
+  }
+}
+
+.type-hint-touch {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .type-hint-keys {
+    display: none;
+  }
+
+  .type-hint-touch {
+    display: inline;
+  }
+}
+
+.panel-fold {
+  display: none;
 }
 
 .part-label {
@@ -255,48 +310,6 @@ button {
   to {
     opacity: 0;
   }
-}
-
-/* Switch cutaway: beside the lifted switches on wide screens, in the folder on narrow ones. */
-
-.cutaway {
-  margin: 0;
-}
-
-.cutaway svg {
-  display: block;
-  width: 100%;
-  touch-action: none;
-  cursor: pointer;
-  user-select: none;
-}
-
-.cutaway p {
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.cutaway-stage {
-  position: absolute;
-  top: calc((100% - var(--stage-inset, 0px)) / 2);
-  left: var(--gutter);
-  width: 210px;
-  padding: 16px 18px 18px;
-  border-radius: var(--radius);
-  background: var(--card);
-  transform: translateY(-50%);
-  animation: folder-open 0.35s ease both;
-}
-
-.cutaway-stage svg {
-  max-width: 170px;
-  margin: 0 auto;
-}
-
-.cutaway-folder {
-  display: none;
 }
 
 /* Panel */
@@ -813,13 +826,47 @@ button {
     gap: 18px;
   }
 
-  .orbit-hint {
+  .hints {
     left: calc(var(--stage-inset-left, 0px) + 12px);
     bottom: var(--gutter);
+    transition: left 0.45s ease;
   }
 
-  .cutaway-stage {
-    left: calc(var(--stage-inset-left, 0px) + 12px);
+  .panel {
+    transition:
+      opacity 0.3s ease,
+      transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .app[data-folded='true'] .panel {
+    transform: translateX(-100%);
+  }
+
+  /* Stays at the panel's edge, so folded it waits at the left of the screen to bring it back. */
+  .panel-fold {
+    position: absolute;
+    top: var(--gutter);
+    left: 100%;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 44px;
+    margin-left: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius);
+    background: var(--card);
+    pointer-events: auto;
+    transition: background-color 0.2s;
+  }
+
+  .app[data-folded='true'] .panel-fold {
+    margin-left: 0;
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  .panel-fold:hover {
+    background: #e4e4e4;
   }
 }
 
@@ -905,26 +952,6 @@ button {
   .tools {
     top: 8px;
     transform: none;
-  }
-
-  .cutaway-stage {
-    display: none;
-  }
-
-  .cutaway-folder {
-    display: grid;
-    grid-template-columns: 120px minmax(0, 1fr);
-    align-items: center;
-    gap: 4px 16px;
-  }
-
-  .cutaway-folder .label {
-    grid-column: 1 / -1;
-    margin: 0;
-  }
-
-  .cutaway-folder p {
-    margin: 0;
   }
 }
 
@@ -1057,26 +1084,6 @@ button {
     display: none;
   }
 
-  .cutaway-stage {
-    display: none;
-  }
-
-  .cutaway-folder {
-    display: grid;
-    grid-template-columns: 96px minmax(0, 1fr);
-    align-items: center;
-    gap: 4px 12px;
-  }
-
-  .cutaway-folder .label {
-    grid-column: 1 / -1;
-    margin: 0;
-  }
-
-  .cutaway-folder p {
-    margin: 0;
-  }
-
   .typing {
     padding-top: 6px;
   }
@@ -1089,5 +1096,9 @@ button {
 @media (prefers-reduced-motion: reduce) {
   * {
     transition-duration: 0.01ms !important;
+  }
+
+  .key-icon-cap {
+    animation: none;
   }
 }

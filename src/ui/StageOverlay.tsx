@@ -1,5 +1,13 @@
 import { useStage } from '../state/stage'
-import { ExplodeIcon, FilmIcon, OrbitIcon, ResetIcon, SoundOffIcon, SoundOnIcon } from './icons'
+import {
+  ExplodeIcon,
+  FilmIcon,
+  KeyIcon,
+  OrbitIcon,
+  ResetIcon,
+  SoundOffIcon,
+  SoundOnIcon,
+} from './icons'
 
 export function StageTools() {
   const mode = useStage((state) => state.mode)
@@ -67,6 +75,23 @@ export function OrbitHint() {
     <div className="orbit-hint" data-hidden={hidden} aria-hidden={hidden}>
       <OrbitIcon />
       <span>360°</span>
+    </div>
+  )
+}
+
+/**
+ * Tells visitors the board answers their own keyboard, until they first press a key. Touch
+ * screens have no keyboard to press, so it says tap there instead.
+ */
+export function TypeHint() {
+  const hasTyped = useStage((state) => state.hasTyped)
+  const mode = useStage((state) => state.mode)
+  const hidden = hasTyped || mode === 'test' || mode === 'cinematic'
+  return (
+    <div className="type-hint" data-hidden={hidden} aria-hidden={hidden}>
+      <KeyIcon />
+      <span className="type-hint-keys">Type to press</span>
+      <span className="type-hint-touch">Tap a key</span>
     </div>
   )
 }

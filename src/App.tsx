@@ -16,8 +16,8 @@ import { TypingTest } from './test/TypingTest'
 import { Folders } from './ui/Folders'
 import { ArrowIcon } from './ui/icons'
 import { Cinematic } from './ui/Cinematic'
-import { SwitchCutaway } from './ui/SwitchCutaway'
-import { OrbitHint, PartLabel, StageTools, VolumeLabel } from './ui/StageOverlay'
+import { OrbitHint, PartLabel, StageTools, TypeHint, VolumeLabel } from './ui/StageOverlay'
+import { ChevronIcon } from './ui/icons'
 
 const Stage = lazy(() => import('./scene/Stage').then(({ Stage }) => ({ default: Stage })))
 
@@ -78,7 +78,7 @@ const SIDE_PANEL = '(min-width: 1001px) and (min-height: 501px)'
  * Measures the panel floating over the stage. The camera keeps the board beside the side panel on
  * wide screens, and above the whole panel on narrow ones, where it spans the bottom.
  */
-function usePanelInset(mode: string) {
+function usePanelInset(mode: string, folded: boolean) {
   const panelRef = useRef<HTMLDivElement>(null)
   const [panelHeight, setPanelHeight] = useState(0)
   const setStageInset = useStage((state) => state.setStageInset)
@@ -92,7 +92,7 @@ function usePanelInset(mode: string) {
       const side = floating && window.matchMedia(SIDE_PANEL).matches
       const height = floating && !side ? panel.offsetHeight : 0
       setPanelHeight(height)
-      setStageInset(height, side ? panel.offsetWidth : 0)
+      setStageInset(height, side && !folded ? panel.offsetWidth : 0)
     }
     measure()
     const observer = new ResizeObserver(measure)
@@ -102,7 +102,7 @@ function usePanelInset(mode: string) {
       observer.disconnect()
       window.removeEventListener('resize', measure)
     }
-  }, [mode, setStageInset])
+  }, [mode, folded, setStageInset])
 
   return { panelRef, panelHeight }
 }
@@ -111,12 +111,11 @@ export default function App() {
   const mode = useStage((state) => state.mode)
   const ready = useStage((state) => state.ready)
   const dark = useStage(isDark)
-  const switchesOpen = useStage(
-    (state) => state.mode === 'configure' && state.section === 'switches',
-  )
   const knob = useStage((state) => state.knobHovered || state.knobActive)
   const supported = hasGraphicsSupport()
-  const { panelRef, panelHeight } = usePanelInset(mode)
+  const folded = useStage((state) => state.panelFolded)
+  const togglePanel = useStage((state) => state.togglePanel)
+  const { panelRef, panelHeight } = usePanelInset(mode, folded)
   const stageInset = useStage((state) => state.stageInset)
   const stageInsetLeft = useStage((state) => state.stageInsetLeft)
   const insets = {
@@ -132,6 +131,7 @@ export default function App() {
       data-ready={ready}
       data-dark={dark}
       data-knob={knob}
+      data-folded={folded}
       style={insets}
     >
       <div className="stage">
@@ -149,17 +149,30 @@ export default function App() {
         )}
         {supported && ready && (
           <>
-            <OrbitHint />
+            <div className="hints">
+              <OrbitHint />
+              <TypeHint />
+            </div>
             <StageTools />
             <PartLabel />
             <VolumeLabel />
-            {switchesOpen && <SwitchCutaway className="cutaway-stage" />}
           </>
         )}
         {mode === 'test' && <TypingTest />}
         {mode === 'cinematic' && <Cinematic />}
       </div>
       <div className="panel" ref={panelRef}>
+        {/* Folds the side panel away for a clear view of the board, and back. */}
+        <button
+          type="button"
+          className="panel-fold"
+          aria-label={folded ? 'Show controls' : 'Hide controls'}
+          aria-expanded={!folded}
+          title={folded ? 'Show controls' : 'Hide controls'}
+          onClick={togglePanel}
+        >
+          <ChevronIcon direction={folded ? 'right' : 'left'} />
+        </button>
         <Summary />
         <Folders />
       </div>

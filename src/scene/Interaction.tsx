@@ -33,7 +33,9 @@ function useKeyTracker(rig: KeyboardRig) {
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
-      if (shouldPressKey(event)) tracker.down(event.code)
+      if (!shouldPressKey(event)) return
+      tracker.down(event.code)
+      useStage.getState().markTyped()
     }
     const up = (event: KeyboardEvent) => tracker.up(event.code)
     const releaseAll = () => tracker.releaseAll()

@@ -29,7 +29,7 @@ const SHOTS: Record<string, Shot> = {
   'isolate-plate': { direction: [0.5, 0.5, 0.71], target: [0, 7.2, 0], width: 40, height: 31 },
   // Pulled back and higher, so the whole desk mat and the cable's run are in view.
   desk: { direction: [0.3, 0.8, 0.52], target: [0, 0, -2.5], width: 50, height: 36 },
-  test: { direction: [0, 0.82, 0.57], target: [0, 1.2, -1.6], width: 42, height: 24 },
+  test: { direction: [0, 0.51, 0.86], target: [0, 3.8, -3.6], width: 50, height: 28 },
 }
 
 export function CameraRig() {
@@ -41,8 +41,12 @@ export function CameraRig() {
   const free = (size.height - inset) / size.height
   // On wide screens the tools stand at the right edge, so the board keeps clear of them on both
   // sides and stays centred. The margin is the gutter, the 44px tools and a little air.
+  // With the side panel folded the tools still stand there, so the margin stays.
+  const folded = useStage(
+    (state) => state.panelFolded && (state.mode === 'configure' || state.mode === 'exploded'),
+  )
   const toolsMargin =
-    (inset > 0 || insetLeft > 0) && size.width > 1000
+    (inset > 0 || insetLeft > 0 || folded) && size.width > 1000
       ? Math.min(48, Math.max(16, size.width * 0.034)) + 56
       : 0
   const fitAspect = (size.width - insetLeft - 2 * toolsMargin) / size.height

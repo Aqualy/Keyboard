@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useStage } from '../state/stage'
-import { OrbitHint, PartLabel, StageTools, VolumeLabel } from './StageOverlay'
+import { OrbitHint, PartLabel, StageTools, TypeHint, VolumeLabel } from './StageOverlay'
 
 describe('StageTools', () => {
   beforeEach(() => {
@@ -49,6 +49,41 @@ describe('OrbitHint', () => {
     useStage.setState({ mode: 'test', hasOrbited: false })
     const { container } = render(<OrbitHint />)
     expect(container.firstChild).toHaveAttribute('data-hidden', 'true')
+  })
+})
+
+describe('TypeHint', () => {
+  it('shows until the first key press', () => {
+    useStage.setState({ mode: 'configure', hasTyped: false })
+    const { container } = render(<TypeHint />)
+    expect(container.firstChild).toHaveAttribute('data-hidden', 'false')
+    useStage.getState().markTyped()
+  })
+
+  it('hides after a key press', () => {
+    useStage.setState({ mode: 'configure', hasTyped: false })
+    useStage.getState().markTyped()
+    const { container } = render(<TypeHint />)
+    expect(container.firstChild).toHaveAttribute('data-hidden', 'true')
+  })
+
+  it('hides during a typing test and cinematic mode', () => {
+    for (const mode of ['test', 'cinematic'] as const) {
+      useStage.setState({ mode, hasTyped: false })
+      const { container, unmount } = render(<TypeHint />)
+      expect(container.firstChild).toHaveAttribute('data-hidden', 'true')
+      unmount()
+    }
+  })
+})
+
+describe('panel folding', () => {
+  it('folds and unfolds the side panel', () => {
+    useStage.setState({ panelFolded: false })
+    useStage.getState().togglePanel()
+    expect(useStage.getState().panelFolded).toBe(true)
+    useStage.getState().togglePanel()
+    expect(useStage.getState().panelFolded).toBe(false)
   })
 })
 

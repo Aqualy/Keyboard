@@ -135,17 +135,6 @@ test('the lighting folder darkens the room and lights the board', async ({ page 
   expect(errors).toEqual([])
 })
 
-test('the switch cutaway presses along with the keyboard', async ({ page }) => {
-  await openConfigurator(page)
-  await openFolder(page, 'Switches')
-  const cutaway = page.locator('.cutaway:visible svg')
-  await expect(cutaway).toHaveAttribute('data-mechanism', 'linear')
-  await page.keyboard.down('KeyF')
-  await expect(cutaway).toHaveAttribute('data-pressed', 'true')
-  await page.keyboard.up('KeyF')
-  await expect(cutaway).toHaveAttribute('data-pressed', 'false')
-})
-
 test('cinematic mode hides every control and leaves with Esc', async ({ page }) => {
   const errors = trackErrors(page)
   await openConfigurator(page)
@@ -254,6 +243,9 @@ test('dragging orbits the camera and retires the 360 hint', async ({ page, hasTo
 test('releases every held key when the window loses focus', async ({ page }) => {
   const errors = trackErrors(page)
   await openConfigurator(page)
+  // The first key press retires the typing hint over the stage, so it goes before the snapshot.
+  await page.keyboard.press('KeyQ')
+  await waitForStillCanvas(page)
   const untouched = await canvasImage(page)
   for (const key of ['KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyJ', 'KeyK', 'KeyL', 'Space']) {
     await page.keyboard.down(key)
@@ -262,4 +254,24 @@ test('releases every held key when the window loses focus', async ({ page }) => 
   await waitForStillCanvas(page)
   expect(sameImage(await canvasImage(page), untouched)).toBe(true)
   expect(errors).toEqual([])
+})
+
+test('the side panel folds away and comes back', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'Only wide screens have the side panel')
+  await openConfigurator(page)
+  const before = await canvasImage(page)
+  await page.getByRole('button', { name: 'Hide controls' }).click()
+  await expect(page.locator('.app')).toHaveAttribute('data-folded', 'true')
+  await waitForStillCanvas(page)
+  expect(sameImage(await canvasImage(page), before)).toBe(false)
+  await page.getByRole('button', { name: 'Show controls' }).click()
+  await expect(page.locator('.app')).toHaveAttribute('data-folded', 'false')
+  await expect(page.locator('.folder-tab', { hasText: 'Style' })).toBeVisible()
+})
+
+test('the typing hint retires after the first key press', async ({ page }) => {
+  await openConfigurator(page)
+  await expect(page.locator('.type-hint')).toHaveAttribute('data-hidden', 'false')
+  await page.keyboard.press('KeyJ')
+  await expect(page.locator('.type-hint')).toHaveAttribute('data-hidden', 'true')
 })

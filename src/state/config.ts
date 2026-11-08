@@ -150,6 +150,16 @@ export const useConfig = create<ConfigStore>((set) => ({
     }),
 }))
 
+/**
+ * Applies a detected region before the board first shows. A link that names a region or a
+ * standard was chosen on purpose, so it wins over the guess.
+ */
+export function applyDetectedRegion(region: RegionId | undefined, search = window.location.search) {
+  const params = new URLSearchParams(search)
+  if (!region || params.has('region') || params.has('standard')) return
+  useConfig.getState().update({ region })
+}
+
 useConfig.subscribe(({ config }) => {
   const query = serializeConfig(config)
   const url = `${window.location.pathname}${query ? `?${query}` : ''}`

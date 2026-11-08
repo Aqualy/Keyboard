@@ -111,6 +111,21 @@ export const SWITCH_TYPES = [
 
 export type SwitchTypeId = (typeof SWITCH_TYPES)[number]['id']
 
+/** Switch designs with their own 3D model. The rest of the switches differ only in colour. */
+export const SWITCH_MODELS = ['mx', 'box', 'alps', 'topre', 'buckling'] as const
+export type SwitchModel = (typeof SWITCH_MODELS)[number]
+
+export interface SwitchShell {
+  hex: string
+  /** 1 for solid plastic. Lower lets light through, for clear or smoky polycarbonate. */
+  opacity: number
+}
+
+const solid = (hex: string): SwitchShell => ({ hex, opacity: 1 })
+const CLEAR: SwitchShell = { hex: '#f3f6f9', opacity: 0.1 }
+const SMOKY: SwitchShell = { hex: '#55555d', opacity: 0.2 }
+const CHERRY_BLACK = solid('#1d1d1f')
+
 const switchSpecs = (maker: string, feel: string, weight: string): SpecRow[] => [
   { label: 'Maker', value: maker },
   { label: 'Feel', value: feel },
@@ -122,6 +137,9 @@ interface SwitchOption {
   name: string
   type: SwitchTypeId
   stemHex: string
+  model: SwitchModel
+  top: SwitchShell
+  bottom: SwitchShell
   travel: number
   specs: SpecRow[]
   /** False when the recording has no separate Backspace, Enter and Space sounds. */
@@ -134,6 +152,9 @@ export const SWITCHES = [
     name: 'Cream',
     type: 'linear',
     stemHex: '#e6dcc3',
+    model: 'mx',
+    top: solid('#e7dcc1'),
+    bottom: solid('#e7dcc1'),
     travel: 0.4,
     specs: switchSpecs('NovelKeys', 'Smooth', 'Medium'),
   },
@@ -142,6 +163,9 @@ export const SWITCHES = [
     name: 'Alpaca',
     type: 'linear',
     stemHex: '#d9a7c7',
+    model: 'mx',
+    top: { hex: '#76777d', opacity: 0.5 },
+    bottom: solid('#5d5e63'),
     travel: 0.4,
     specs: switchSpecs('Primekb', 'Smooth', 'Medium'),
   },
@@ -150,6 +174,9 @@ export const SWITCHES = [
     name: 'Red Ink',
     type: 'linear',
     stemHex: '#c4342f',
+    model: 'mx',
+    top: SMOKY,
+    bottom: SMOKY,
     travel: 0.4,
     specs: switchSpecs('Gateron', 'Smooth', 'Light'),
   },
@@ -158,6 +185,9 @@ export const SWITCHES = [
     name: 'Black Ink',
     type: 'linear',
     stemHex: '#2a2a2d',
+    model: 'mx',
+    top: SMOKY,
+    bottom: SMOKY,
     travel: 0.4,
     specs: switchSpecs('Gateron', 'Smooth', 'Medium'),
   },
@@ -166,6 +196,9 @@ export const SWITCHES = [
     name: 'Tealio',
     type: 'linear',
     stemHex: '#2ba8a0',
+    model: 'mx',
+    top: CLEAR,
+    bottom: CLEAR,
     travel: 0.36,
     specs: switchSpecs('Zeal PC', 'Smooth', 'Heavy'),
   },
@@ -174,6 +207,9 @@ export const SWITCHES = [
     name: 'MX Black',
     type: 'linear',
     stemHex: '#1f1f22',
+    model: 'mx',
+    top: CHERRY_BLACK,
+    bottom: CHERRY_BLACK,
     travel: 0.4,
     specs: switchSpecs('Cherry', 'Smooth', 'Heavy'),
   },
@@ -181,7 +217,10 @@ export const SWITCHES = [
     id: 'holypanda',
     name: 'Holy Panda',
     type: 'tactile',
-    stemHex: '#b9a4dc',
+    stemHex: '#e8a184',
+    model: 'mx',
+    top: solid('#ece5d8'),
+    bottom: solid('#ece5d8'),
     travel: 0.38,
     specs: switchSpecs('Drop', 'Sharp bump', 'Medium'),
   },
@@ -190,6 +229,9 @@ export const SWITCHES = [
     name: 'MX Brown',
     type: 'tactile',
     stemHex: '#7a4a2b',
+    model: 'mx',
+    top: CHERRY_BLACK,
+    bottom: CHERRY_BLACK,
     travel: 0.4,
     specs: switchSpecs('Cherry', 'Light bump', 'Light'),
   },
@@ -198,6 +240,9 @@ export const SWITCHES = [
     name: 'Topre',
     type: 'tactile',
     stemHex: '#d8d8d4',
+    model: 'topre',
+    top: solid('#2a2a2c'),
+    bottom: solid('#2a2a2c'),
     travel: 0.4,
     specs: switchSpecs('Topre', 'Soft bump', 'Light'),
   },
@@ -206,6 +251,9 @@ export const SWITCHES = [
     name: 'Box Navy',
     type: 'clicky',
     stemHex: '#26406f',
+    model: 'box',
+    top: CLEAR,
+    bottom: solid('#f1f0ec'),
     travel: 0.36,
     specs: switchSpecs('Kailh', 'Bump + click', 'Heavy'),
   },
@@ -214,6 +262,9 @@ export const SWITCHES = [
     name: 'MX Blue',
     type: 'clicky',
     stemHex: '#2f62b8',
+    model: 'mx',
+    top: CHERRY_BLACK,
+    bottom: CHERRY_BLACK,
     travel: 0.4,
     longKeySamples: false,
     specs: switchSpecs('Cherry', 'Bump + click', 'Medium'),
@@ -222,7 +273,10 @@ export const SWITCHES = [
     id: 'bluealps',
     name: 'Blue Alps',
     type: 'clicky',
-    stemHex: '#6fa8dc',
+    stemHex: '#7e94ad',
+    model: 'alps',
+    top: solid('#2f2f32'),
+    bottom: solid('#2f2f32'),
     travel: 0.35,
     specs: switchSpecs('SKCM', 'Bump + click', 'Medium'),
   },
@@ -230,7 +284,10 @@ export const SWITCHES = [
     id: 'buckling',
     name: 'Buckling Spring',
     type: 'clicky',
-    stemHex: '#3b3b3e',
+    stemHex: '#a9abae',
+    model: 'buckling',
+    top: solid('#3a3a3d'),
+    bottom: solid('#1c1c1e'),
     travel: 0.38,
     specs: switchSpecs('IBM Model M', 'Bump + click', 'Heavy'),
   },

@@ -70,17 +70,44 @@ function applyConfig(rig: KeyboardRig, config: Config, duration: number) {
   rig.desk.setCable(config.cable !== 'none')
   rig.desk.setMat(config.mat !== 'none')
 
-  const switchOption = byId(SWITCHES, config.switch)
-  tweenColour(uniforms.stem, switchOption.stemHex, duration)
-  rig.travel = switchOption.travel
+  // A new design swaps in at once, so only its colours are tweened.
+  applySwitchLook(config.switch, false, duration)
+  rig.travel = byId(SWITCHES, config.switch).travel
+  rig.setSwitches(config.switch, useStage.getState().compare)
 }
 
-function applyCompare(compare: SwitchId | null) {
+/** Sets a switch's housing and stem colours, on one half of the board or the other. */
+function applySwitchLook(id: SwitchId, compared: boolean, duration: number) {
+  const option = byId(SWITCHES, id)
+  const set = compared
+    ? {
+        stem: uniforms.stemCompare,
+        top: uniforms.switchTopCompare,
+        topOpacity: uniforms.switchTopOpacityCompare,
+        bottom: uniforms.switchBottomCompare,
+        bottomOpacity: uniforms.switchBottomOpacityCompare,
+      }
+    : {
+        stem: uniforms.stem,
+        top: uniforms.switchTop,
+        topOpacity: uniforms.switchTopOpacity,
+        bottom: uniforms.switchBottom,
+        bottomOpacity: uniforms.switchBottomOpacity,
+      }
+  tweenColour(set.stem, option.stemHex, duration)
+  tweenColour(set.top, option.top.hex, duration)
+  tweenColour(set.bottom, option.bottom.hex, duration)
+  gsap.to(set.topOpacity, { value: option.top.opacity, duration, overwrite: true })
+  gsap.to(set.bottomOpacity, { value: option.bottom.opacity, duration, overwrite: true })
+}
+
+function applyCompare(rig: KeyboardRig, compare: SwitchId | null) {
   uniforms.comparing.value = compare ? 1 : 0
   if (compare) {
-    uniforms.stemCompare.value.set(byId(SWITCHES, compare).stemHex)
+    applySwitchLook(compare, true, 0)
     preloadSwitch(compare)
   }
+  rig.setSwitches(useConfig.getState().config.switch, compare)
 }
 
 /** Keeps the 3D scene matching the configuration. Renders nothing. */
@@ -89,9 +116,9 @@ export function ConfigSync({ rig }: { rig: KeyboardRig }) {
     const { config } = useConfig.getState()
     applyConfig(rig, config, 0)
     rig.setProfile(config.profile)
-    applyCompare(useStage.getState().compare)
+    applyCompare(rig, useStage.getState().compare)
     const unsubscribeStage = useStage.subscribe((state, previous) => {
-      if (state.compare !== previous.compare) applyCompare(state.compare)
+      if (state.compare !== previous.compare) applyCompare(rig, state.compare)
     })
     const unsubscribeConfig = useConfig.subscribe((state, previous) => {
       if (state.config === previous.config) return

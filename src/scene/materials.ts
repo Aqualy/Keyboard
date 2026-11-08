@@ -21,6 +21,7 @@ import {
 } from 'three/tsl'
 import {
   MeshBasicNodeMaterial,
+  MeshPhysicalNodeMaterial,
   MeshStandardNodeMaterial,
   type Node,
   type Texture,
@@ -42,6 +43,14 @@ export const uniforms = {
   /** Stem colour of the compared switch, on the left half while comparing. */
   stemCompare: color(),
   comparing: uniform(0),
+  switchTop: color(),
+  switchTopOpacity: uniform(1),
+  switchTopCompare: color(),
+  switchTopOpacityCompare: uniform(1),
+  switchBottom: color(),
+  switchBottomOpacity: uniform(1),
+  switchBottomCompare: color(),
+  switchBottomOpacityCompare: uniform(1),
   cable: color(),
   connector: uniform(new Color('#cfd0d2')),
   mat: color(),
@@ -62,6 +71,13 @@ export const uniforms = {
   rgbSpeed: uniform(1),
   /** Size of the key area in cm, set by each board, so legends and LED patterns fit it. */
   keyArea: uniform(new Vector2(1, 1)),
+  /**
+   * How much LED light reaches each part, 1 seated on the PCB and 0 once lifted away. The light
+   * comes only from the LEDs on the PCB, so parts pulled off the board go dark.
+   */
+  ledReachKeycaps: uniform(1),
+  ledReachSwitches: uniform(1),
+  ledReachPlate: uniform(1),
   /** Seconds on the clock key presses are stamped with, for the reactive effect. */
   ledClock: uniform(0),
   /** 0 to 1 while a typing run's heatmap shows on the keys. */
@@ -219,24 +235,83 @@ export function createKeycapMaterial(legends: CanvasTexture) {
   material.emissiveNode = Fn(() => {
     const key = attribute('aKey', 'vec2')
     const skirt = float(1).sub(smoothstep(0, 0.32, positionGeometry.y))
-    return glow(key.add(positionGeometry.xz), skirt.mul(0.9)).add(
-      heatColour().mul(heatWeight()).mul(0.45),
+    // A clear housing spreads the LED's light all round the cap. A solid one lets it out only
+    // through its window, so less escapes, and mostly on the north side above the LED.
+    const solidity = select(
+      comparedHalf(),
+      uniforms.switchTopOpacityCompare,
+      uniforms.switchTopOpacity,
     )
+    const north = smoothstep(0.3, -0.7, positionGeometry.z)
+    const spread = mix(float(1), north.mul(0.75).add(0.1), solidity)
+    const light = skirt.mul(0.9).mul(spread).mul(uniforms.ledReachKeycaps)
+    return glow(key.add(positionGeometry.xz), light).add(heatColour().mul(heatWeight()).mul(0.45))
   })()
 
   return material
 }
 
-/** Switch housings, lit from inside by their LED. */
-export function createHousingMaterial(base: Color) {
-  const material = new MeshStandardNodeMaterial({ roughness: 0.3, metalness: 0 })
-  material.colorNode = vec3(base.r, base.g, base.b)
+/** True on the left half of the board while two switches are compared there. */
+const comparedHalf = () =>
+  attribute('aKey', 'vec2').x.lessThan(0).and(uniforms.comparing.greaterThan(0.5))
+
+/**
+ * A switch housing half. Clear and smoky housings are see-through, showing the stem and spring,
+ * and the top half carries the LED's light up through its window.
+ */
+export function createSwitchShellMaterial(part: 'top' | 'bottom') {
+  const [own, ownOpacity, compared, comparedOpacity] =
+    part === 'top'
+      ? [
+          uniforms.switchTop,
+          uniforms.switchTopOpacity,
+          uniforms.switchTopCompare,
+          uniforms.switchTopOpacityCompare,
+        ]
+      : [
+          uniforms.switchBottom,
+          uniforms.switchBottomOpacity,
+          uniforms.switchBottomCompare,
+          uniforms.switchBottomOpacityCompare,
+        ]
+  // Polycarbonate refracts like glass rather than fading out: light bends through it, its
+  // edges catch highlights, and the flat faces stay clear. Solid nylon and POM let none through.
+  const material = new MeshPhysicalNodeMaterial({ metalness: 0, ior: 1.58, thickness: 0.12 })
+  const solidity = Fn(() => select(comparedHalf(), comparedOpacity, ownOpacity))()
+  material.colorNode = Fn(() => select(comparedHalf(), compared, own))()
+  material.transmissionNode = float(1).sub(solidity)
+  material.roughnessNode = mix(float(0.04), float(0.38), solidity)
+  material.specularIntensityNode = float(1)
+  if (part === 'top') {
+    material.emissiveNode = Fn(() => {
+      const key = attribute('aKey', 'vec2')
+      // The LED sits on the PCB just north of the stem. A clear housing carries its light all
+      // over; a solid one lets it out only through the window above it.
+      const ledWindow = smoothstep(-0.34, -0.44, positionGeometry.z).mul(
+        smoothstep(0.24, 0.44, positionGeometry.y),
+      )
+      const through = mix(float(1), ledWindow, solidity)
+      return glow(key.add(positionGeometry.xz), through.mul(1.4).mul(uniforms.ledReachSwitches))
+    })()
+  }
+  return material
+}
+
+/** The per-key LED: a small white package on the PCB that lights in the effect's colour. */
+export function createLedMaterial() {
+  const material = new MeshStandardNodeMaterial({ roughness: 0.4, metalness: 0 })
+  material.colorNode = vec3(0.92, 0.92, 0.9)
   material.emissiveNode = Fn(() => {
     const key = attribute('aKey', 'vec2')
-    // Brightest at the top, where the light pipe is.
-    const height = smoothstep(-0.2, 0.52, positionGeometry.y)
-    return glow(key.add(positionGeometry.xz), height.mul(1.4))
+    return glow(key.add(positionGeometry.xz), 3)
   })()
+  return material
+}
+
+/** Springs, contact leaves, click bars and pins. */
+export function createSwitchMetalMaterial() {
+  const material = new MeshStandardNodeMaterial({ roughness: 0.3, metalness: 1 })
+  material.colorNode = vec3(0.8, 0.8, 0.82)
   return material
 }
 
@@ -273,7 +348,7 @@ export function createPlateMaterial() {
   const material = new MeshStandardNodeMaterial()
   material.colorNode = uniforms.plate
   // A faint wash where the LEDs spill onto the plate.
-  material.emissiveNode = glow(positionGeometry.xz, 0.12)
+  material.emissiveNode = glow(positionGeometry.xz, uniforms.ledReachPlate.mul(0.12))
   material.metalnessNode = uniforms.plateMetalness
   material.roughnessNode = uniforms.plateRoughness
   return material
@@ -289,14 +364,7 @@ export function createKnobMaterial() {
 
 export function createStemMaterial() {
   const material = new MeshStandardNodeMaterial({ roughness: 0.32, metalness: 0 })
-  material.colorNode = Fn(() => {
-    const left = attribute('aKey', 'vec2').x.lessThan(0)
-    return select(
-      left.and(uniforms.comparing.greaterThan(0.5)),
-      uniforms.stemCompare,
-      uniforms.stem,
-    )
-  })()
+  material.colorNode = Fn(() => select(comparedHalf(), uniforms.stemCompare, uniforms.stem))()
   return material
 }
 

@@ -807,23 +807,292 @@ def tapered_box(bm, lower, upper):
 
 
 def build_switch():
+    """Every switch family the configurator offers, each as named parts sharing one frame:
+    the plate's top at z 0, the stem's shoulder at 0.56 and its tip at 0.9, so keycaps sit the
+    same on all of them. Parts are `<family>_top`, `_bottom`, `_stem` and `_metal`."""
     clear_scene()
-    bm = bmesh.new()
-    add_box(bm, -0.69, 0.69, -0.69, 0.69, -0.5, 0.0)
-    add_box(bm, -0.78, 0.78, -0.78, 0.78, 0.0, 0.08)
-    tapered_box(bm, (0.72, 0.72, 0.08), (0.52, 0.52, 0.52))
-    add_cylinder(bm, 0, 0, 0.2, -0.82, -0.5, 10)
-    add_cylinder(bm, -0.5, 0, 0.09, -0.82, -0.5, 6)
-    add_cylinder(bm, 0.5, 0, 0.09, -0.82, -0.5, 6)
-    housing = to_object("housing", bm, material("housing", (0.9, 0.9, 0.9), 0, 0.3))
-    soften(housing, 0.025, 1, 30)
+    plastic = material("switchPlastic", (0.85, 0.85, 0.85), 0, 0.35)
+    steel = material("switchSteel", (0.75, 0.75, 0.76), 1, 0.3)
+    parts = []
+    for family, builder in (
+        ("mx", build_mx_switch),
+        ("box", build_box_switch),
+        ("alps", build_alps_switch),
+        ("topre", build_topre_switch),
+        ("buckling", build_buckling_switch),
+    ):
+        for part, obj in builder(plastic, steel).items():
+            obj.name = obj.data.name = f"{family}_{part}"
+            parts.append(obj)
+    return parts
 
+
+def spring_mesh(name, radius, z0, z1, turns, wire, mat, cx=0.0, cy=0.0, bow=0.0):
+    """A coil spring as a mesh, optionally bowed sideways like a buckling spring."""
+    curve = bpy.data.curves.new(name, "CURVE")
+    curve.dimensions = "3D"
+    curve.bevel_depth = wire
+    curve.bevel_resolution = 1
+    spline = curve.splines.new("POLY")
+    steps = int(turns * 14)
+    spline.points.add(steps)
+    for i in range(steps + 1):
+        t = i / steps
+        a = math.tau * turns * t
+        offset = math.sin(t * math.pi) * bow
+        spline.points[i].co = (
+            cx + radius * math.cos(a) + offset,
+            cy + radius * math.sin(a),
+            z0 + (z1 - z0) * t,
+            1,
+        )
+    obj = bpy.data.objects.new(name, curve)
+    bpy.context.scene.collection.objects.link(obj)
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    mesh = bpy.data.meshes.new_from_object(obj.evaluated_get(depsgraph))
+    bpy.data.objects.remove(obj)
+    bpy.data.curves.remove(curve)
+    result = bpy.data.objects.new(name, mesh)
+    bpy.context.scene.collection.objects.link(result)
+    mesh.materials.append(mat)
+    return result
+
+
+def join(objects, name):
+    """Merges parts into one mesh, keeping the first part's material."""
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in objects:
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = objects[0]
+    bpy.ops.object.join()
+    joined = bpy.context.view_layer.objects.active
+    joined.name = joined.data.name = name
+    return joined
+
+
+def solid(name, mat, *shapes):
+    """Unions closed shapes, each drawn by a function into its own bmesh, into one clean solid."""
+    objects = []
+    for i, draw in enumerate(shapes):
+        bm = bmesh.new()
+        draw(bm)
+        objects.append(to_object(f"{name}_{i}", bm, mat))
+    result = objects[0]
+    for other in objects[1:]:
+        boolean(result, other, "UNION")
+    result.name = result.data.name = name
+    return result
+
+
+def cut_box(obj, x0, x1, y0, y1, z0, z1):
     bm = bmesh.new()
-    add_box(bm, -0.29, 0.29, -0.29, 0.29, 0.3, 0.56)
-    add_box(bm, -0.2, 0.2, -0.06, 0.06, 0.56, 0.9)
-    add_box(bm, -0.06, 0.06, -0.2, 0.2, 0.56, 0.9)
-    stem = to_object("stem", bm, material("stem", (0.8, 0.1, 0.1), 0, 0.3))
-    return [housing, stem]
+    add_box(bm, x0, x1, y0, y1, z0, z1)
+    boolean(obj, to_object("cut", bm))
+
+
+def mx_bottom(plastic, clips=True):
+    """The bottom housing below the plate: 14 mm square, centre post and plastic PCB legs."""
+    bottom = solid(
+        "bottom",
+        plastic,
+        lambda bm: add_box(bm, -0.69, 0.69, -0.69, 0.69, -0.5, 0.0),
+        lambda bm: add_cylinder(bm, 0, 0, 0.2, -0.83, -0.49, 16),
+        lambda bm: add_cylinder(bm, -0.508, 0, 0.09, -0.8, -0.49, 10),
+        lambda bm: add_cylinder(bm, 0.508, 0, 0.09, -0.8, -0.49, 10),
+    )
+    if clips:
+        # The four latches that hold the halves together show as notches on the sides.
+        for sy in (-1, 1):
+            cut_box(bottom, -0.3, 0.3, sy * 0.71 - 0.05, sy * 0.71 + 0.05, -0.16, 0.01)
+    soften(bottom, 0.02, 1, 30)
+    return bottom
+
+
+def mx_pins(steel):
+    bm = bmesh.new()
+    add_cylinder(bm, -0.381, 0.254, 0.05, -0.86, -0.5, 8)
+    add_cylinder(bm, 0.254, 0.508, 0.05, -0.86, -0.5, 8)
+    return to_object("pins", bm, steel)
+
+
+def mx_top(plastic, led_window=True):
+    """The top housing: a skirt on the plate, sloping shoulders, the stem hole and the LED window."""
+    top = solid(
+        "top",
+        plastic,
+        lambda bm: add_prism(bm, rounded_outline(0.78, 0.78, 0.06, 3), 0.0, 0.2),
+        lambda bm: tapered_box(bm, (0.76, 0.76, 0.19), (0.56, 0.6, 0.52)),
+    )
+    # Hollow it, so a clear housing shows the stem and spring inside.
+    hollow = solid(
+        "hollow",
+        None,
+        lambda bm: add_box(bm, -0.7, 0.7, -0.7, 0.7, -0.01, 0.14),
+        lambda bm: tapered_box(bm, (0.68, 0.68, 0.13), (0.48, 0.52, 0.44)),
+    )
+    boolean(top, hollow)
+    cut_box(top, -0.31, 0.31, -0.31, 0.31, 0.3, 0.6)
+    if led_window:
+        cut_box(top, -0.26, 0.26, 0.4, 0.58, 0.3, 0.6)
+    # Latch slots on the sides of the skirt.
+    for sx in (-1, 1):
+        cut_box(top, sx * 0.79 - 0.05, sx * 0.79 + 0.05, -0.22, 0.22, 0.03, 0.15)
+    soften(top, 0.02, 1, 30)
+    return top
+
+
+def mx_stem_body(bm, legs=True):
+    add_box(bm, -0.29, 0.29, -0.29, 0.29, 0.05, 0.56)
+    if legs:
+        # The leg that rides against the contact leaf, toward the front.
+        add_box(bm, -0.24, -0.12, -0.42, -0.29, -0.3, 0.3)
+
+
+def mx_cross(bm, top=0.9):
+    add_box(bm, -0.2, 0.2, -0.06, 0.06, 0.56, top)
+    add_box(bm, -0.06, 0.06, -0.2, 0.2, 0.56, top)
+
+
+def mx_metal(steel, extra=()):
+    spring = spring_mesh("spring", 0.2, -0.48, 0.1, 9, 0.022, steel)
+    bm = bmesh.new()
+    # Contact leaves at the front: the fixed one and the springy one the leg holds open.
+    add_box(bm, -0.34, -0.06, -0.58, -0.56, -0.48, 0.12)
+    add_box(bm, -0.34, -0.06, -0.5, -0.48, -0.48, 0.0)
+    leaves = to_object("leaves", bm, steel)
+    return join([spring, leaves, mx_pins(steel), *extra], "metal")
+
+
+def build_mx_switch(plastic, steel):
+    bottom = mx_bottom(plastic)
+    top = mx_top(plastic)
+    bm = bmesh.new()
+    mx_stem_body(bm)
+    mx_cross(bm)
+    stem = to_object("stem", bm, plastic)
+    return {"top": top, "bottom": bottom, "stem": stem, "metal": mx_metal(steel)}
+
+
+def build_box_switch(plastic, steel):
+    """Kailh Box: the cross stands inside a square box, ringed by a raised collar on the top
+    housing, and a thick click bar sits across the front."""
+    bottom = mx_bottom(plastic)
+    top = mx_top(plastic, led_window=False)
+    bm = bmesh.new()
+    add_prism(bm, rounded_outline(0.42, 0.42, 0.05, 3), 0.44, 0.55)
+    collar = to_object("collar", bm, plastic)
+    cut_box(collar, -0.33, 0.33, -0.33, 0.33, 0.3, 0.7)
+    top = join([top, collar], "top")
+    bm = bmesh.new()
+    mx_stem_body(bm)
+    stem = to_object("stem", bm, plastic)
+    bm = bmesh.new()
+    add_box(bm, -0.31, 0.31, -0.31, 0.31, 0.56, 0.86)
+    box = to_object("box", bm, plastic)
+    cut_box(box, -0.25, 0.25, -0.25, 0.25, 0.6, 1.0)
+    bm = bmesh.new()
+    mx_cross(bm)
+    cross = to_object("cross", bm, plastic)
+    stem = join([stem, box, cross], "stem")
+    bm = bmesh.new()
+    add_box(bm, -0.46, 0.46, -0.6, -0.52, 0.08, 0.16)
+    add_box(bm, -0.46, -0.4, -0.6, -0.3, 0.08, 0.16)
+    add_box(bm, 0.4, 0.46, -0.6, -0.3, 0.08, 0.16)
+    bar = to_object("clickBar", bm, steel)
+    return {"top": top, "bottom": bottom, "stem": stem, "metal": mx_metal(steel, [bar])}
+
+
+def build_alps_switch(plastic, steel):
+    """Alps SKCM: a wide, flat rectangular housing, 15.5 by 12.8 mm, and a rectangular slider."""
+    bm = bmesh.new()
+    add_box(bm, -0.69, 0.69, -0.6, 0.6, -0.55, 0.0)
+    bottom = to_object("bottom", bm, plastic)
+    soften(bottom, 0.02, 1, 30)
+    top = solid(
+        "top",
+        plastic,
+        lambda bm: add_prism(bm, rounded_outline(0.775, 0.64, 0.05, 3), 0.0, 0.36),
+        lambda bm: tapered_box(bm, (0.76, 0.62, 0.35), (0.7, 0.56, 0.44)),
+    )
+    # The rectangular slider hole, with the slits beside it that identify a genuine Alps.
+    cut_box(top, -0.25, 0.25, -0.14, 0.14, 0.2, 0.6)
+    for sx in (-1, 1):
+        cut_box(top, sx * 0.34 - 0.025, sx * 0.34 + 0.025, -0.12, 0.12, 0.38, 0.6)
+    # The long side tabs that clip the switch into the plate.
+    bm = bmesh.new()
+    for sx in (-1, 1):
+        add_box(bm, sx * 0.775 - 0.04, sx * 0.775 + 0.04, -0.3, 0.3, -0.3, 0.06)
+    tabs = to_object("tabs", bm, plastic)
+    top = join([top, tabs], "top")
+    soften(top, 0.02, 1, 30)
+    bm = bmesh.new()
+    add_box(bm, -0.36, 0.36, -0.22, 0.22, 0.05, 0.3)
+    add_box(bm, -0.225, 0.225, -0.11, 0.11, 0.3, 0.9)
+    stem = to_object("stem", bm, plastic)
+    soften(stem, 0.015, 1, 30)
+    bm = bmesh.new()
+    add_cylinder(bm, -0.25, -0.38, 0.05, -0.85, -0.55, 8)
+    add_cylinder(bm, 0.25, -0.38, 0.05, -0.85, -0.55, 8)
+    pins = to_object("metal", bm, steel)
+    return {"top": top, "bottom": bottom, "stem": stem, "metal": pins}
+
+
+def build_topre_switch(plastic, steel):
+    """Topre: a housing with a round well, and a round slider riding in it over a rubber dome."""
+    bm = bmesh.new()
+    add_prism(bm, rounded_outline(0.72, 0.72, 0.12, 4), -0.55, 0.0)
+    bottom = to_object("bottom", bm, plastic)
+    soften(bottom, 0.02, 1, 30)
+    top = solid(
+        "top",
+        plastic,
+        lambda bm: add_prism(bm, rounded_outline(0.76, 0.76, 0.14, 4), 0.0, 0.3),
+        lambda bm: add_cylinder(bm, 0, 0, 0.56, 0.29, 0.5, 40),
+    )
+    bm = bmesh.new()
+    add_cylinder(bm, 0, 0, 0.46, 0.1, 0.7, 40)
+    boolean(top, to_object("well", bm))
+    soften(top, 0.02, 1, 30)
+    stem = solid(
+        "stem",
+        plastic,
+        lambda bm: add_cylinder(bm, 0, 0, 0.43, 0.12, 0.5, 40),
+        lambda bm: add_cylinder(bm, 0, 0, 0.3, 0.49, 0.56, 32),
+    )
+    # The mount: a round post with a cross slot, as on MX-compatible Topre sliders.
+    bm = bmesh.new()
+    add_cylinder(bm, 0, 0, 0.24, 0.56, 0.9, 32)
+    post = to_object("post", bm, plastic)
+    cut_box(post, -0.3, 0.3, -0.055, 0.055, 0.62, 1.0)
+    cut_box(post, -0.055, 0.055, -0.3, 0.3, 0.62, 1.0)
+    stem = join([stem, post], "stem")
+    soften(stem, 0.012, 1, 30)
+    # The conical spring inside the dome, glimpsed in the well.
+    metal = spring_mesh("metal", 0.16, 0.0, 0.3, 4, 0.015, steel)
+    return {"top": top, "bottom": bottom, "stem": stem, "metal": metal}
+
+
+def build_buckling_switch(plastic, steel):
+    """IBM Model M: a tall square barrel on the barrel plate, the spring standing up out of it,
+    and the flipper under it that the spring rocks onto the membrane."""
+    bm = bmesh.new()
+    tapered_box(bm, (0.66, 0.66, -0.45), (0.6, 0.6, 0.52))
+    barrel = to_object("top", bm, plastic)
+    bm = bmesh.new()
+    tapered_box(bm, (0.52, 0.52, -0.6), (0.46, 0.46, 0.7))
+    boolean(barrel, to_object("bore", bm))
+    # The two side slots the keycap's plunger catches in.
+    for sx in (-1, 1):
+        cut_box(barrel, sx * 0.63 - 0.08, sx * 0.63 + 0.08, -0.12, 0.12, 0.16, 0.42)
+    soften(barrel, 0.02, 1, 30)
+    bm = bmesh.new()
+    # The flipper: a paddle pivoting on its back edge, the spring seated on its front.
+    add_box(bm, -0.55, 0.55, -0.42, 0.42, -0.6, -0.5)
+    add_box(bm, -0.55, 0.55, 0.32, 0.42, -0.68, -0.5)
+    flipper = to_object("bottom", bm, plastic)
+    soften(flipper, 0.02, 1, 30)
+    spring = spring_mesh("stem", 0.21, -0.48, 0.9, 13, 0.028, plastic)
+    return {"top": barrel, "bottom": flipper, "stem": spring}
 
 
 # Export --------------------------------------------------------------------------
@@ -1037,9 +1306,65 @@ def preview():
     shoot("close-front-left", (-46, -34, 12), target=(-16, -6, 1))
 
 
+
+# Real colours for the switch preview: top, bottom, stem, and how see-through the top is.
+SWITCH_LOOKS = {
+    "mx": ((0.09, 0.09, 0.1), (0.09, 0.09, 0.1), (0.75, 0.2, 0.08), 0.0),
+    "box": ((0.9, 0.92, 0.94), (0.94, 0.94, 0.92), (0.1, 0.16, 0.36), 0.75),
+    "alps": ((0.16, 0.16, 0.17), (0.16, 0.16, 0.17), (0.42, 0.5, 0.6), 0.0),
+    "topre": ((0.14, 0.14, 0.15), (0.14, 0.14, 0.15), (0.78, 0.78, 0.76), 0.0),
+    "buckling": ((0.2, 0.2, 0.21), (0.07, 0.07, 0.08), (0.7, 0.7, 0.72), 0.0),
+}
+
+
+def preview_switches():
+    """Every switch family in a row, whole and with the top housing hidden, for checking shapes."""
+    PREVIEW.mkdir(parents=True, exist_ok=True)
+    parts = build_switch()
+    for obj in parts:
+        family, part = obj.name.split("_")
+        index = list(SWITCH_LOOKS).index(family)
+        obj.location.x = (index - 2) * 2.4
+        top, bottom, stem, clear = SWITCH_LOOKS[family]
+        colour = {"top": top, "bottom": bottom, "stem": stem}.get(part)
+        if part == "metal" or (family == "buckling" and part == "stem"):
+            mat = material("previewSteel", (0.8, 0.8, 0.82), 1, 0.25)
+        else:
+            mat = material(f"preview_{family}_{part}", colour, 0, 0.3)
+            if part == "top" and clear:
+                bsdf = next(n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+                bsdf.inputs["Transmission Weight"].default_value = clear
+                bsdf.inputs["Roughness"].default_value = 0.08
+        obj.data.materials.clear()
+        obj.data.materials.append(mat)
+    bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 0, -0.9))
+    bpy.context.object.data.materials.append(material("floor", (0.9, 0.9, 0.9), 0, 0.7))
+    uniform_world(1.0)
+    cam_data = bpy.data.cameras.new("cam")
+    cam_data.lens = 100
+    cam = bpy.data.objects.new("cam", cam_data)
+    bpy.context.scene.collection.objects.link(cam)
+    bpy.context.scene.camera = cam
+    setup_cycles(48, 1600, 560)
+
+    def shoot(name, location, target):
+        cam.location = location
+        cam.rotation_euler = (Vector(target) - cam.location).to_track_quat("-Z", "Y").to_euler()
+        bpy.context.scene.render.filepath = str(PREVIEW / f"{name}.png")
+        bpy.ops.render.render(write_still=True)
+
+    shoot("switches", (0, -36, 13), (0, 0, 0.1))
+    shoot("switches-top", (0, -12, 34), (0, 0, 0.2))
+    for obj in parts:
+        if obj.name.endswith("_top"):
+            obj.hide_render = True
+    shoot("switches-open", (0, -36, 13), (0, 0, 0.1))
+
+
 TASKS = {
     "keyboard": lambda: (build_keyboard(), export_glb(LAYOUT_ID)),
-    "switch": lambda: (build_switch(), export_glb("switch")),
+    "switch": lambda: (build_switch(), export_glb("switches")),
+    "switch-preview": preview_switches,
     "keycaps": lambda: [(build_keycaps(p), export_glb(f"keycaps-{p}")) for p in PROFILES],
     "environment": bake_environment,
     "shadow": bake_shadow,

@@ -1,4 +1,4 @@
-import { Canvas, useLoader, useThree } from '@react-three/fiber'
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
 import { Suspense, use, useEffect, useMemo } from 'react'
 import { EquirectangularReflectionMapping, SRGBColorSpace, TextureLoader } from 'three'
 import { WebGPURenderer } from 'three/webgpu'
@@ -25,7 +25,7 @@ const withDraco = (loader: GLTFLoader) => {
 }
 const fontReady = legendFontReady()
 
-const SHARED_MODELS = ['keycaps-cherry.glb', 'keycaps-sa.glb', 'keycaps-xda.glb', 'switch.glb']
+const SHARED_MODELS = ['keycaps-cherry.glb', 'keycaps-sa.glb', 'keycaps-xda.glb', 'switches.glb']
 
 // Every board is small, so all of them load up front and changing size or standard is instant.
 useLoader.preload(
@@ -67,6 +67,9 @@ function Keyboard({ layout }: { layout: Layout }) {
       }),
     [layout, keyboard, cherry, sa, xda, switchModel, shadow, legends],
   )
+
+  // The LEDs are on the PCB, so parts lifted off it in the exploded view stop glowing.
+  useFrame(() => rig.updateLedReach())
 
   useEffect(
     () =>

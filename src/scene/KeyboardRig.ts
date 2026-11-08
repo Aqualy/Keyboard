@@ -1,5 +1,6 @@
 import gsap from 'gsap'
 import {
+  BoxGeometry,
   Group,
   InstancedBufferAttribute,
   InstancedMesh,
@@ -7,7 +8,6 @@ import {
   type BufferGeometry,
   type CanvasTexture,
   type Material,
-  type MeshStandardMaterial,
   type Mesh,
   type Object3D,
   type Texture,
@@ -15,19 +15,29 @@ import {
 import type { GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import { keycapMeshName, type KeyDefinition, type Layout } from '../data/layout'
 import { motion } from '../motion'
-import type { ProfileId } from '../data/options'
+import {
+  byId,
+  SWITCH_MODELS,
+  SWITCHES,
+  type ProfileId,
+  type SwitchId,
+  type SwitchModel,
+} from '../data/options'
+import { switchForKey } from '../state/stage'
 import type { KeyHeat } from '../test/typing'
 import { Desk, portPosition } from './desk'
 import { LAYERS, liftsFor, staggerOrder, type Arrangement, type LayerId } from './layers'
 import {
   createCaseMaterial,
-  createHousingMaterial,
   createKeycapMaterial,
   createKnobMaterial,
+  createLedMaterial,
   createLowerLidMaterial,
   createPlateMaterial,
   createShadowMaterial,
   createStemMaterial,
+  createSwitchMetalMaterial,
+  createSwitchShellMaterial,
   recordPress,
   uniforms,
 } from './materials'
@@ -41,6 +51,10 @@ const PRESS_SECONDS = 0.07
 const STAGGER_SECONDS = 0.03
 const FLEX_SECONDS = 0.4
 const FLEX_DEPTH = 0.06
+/** How far north of the switch centre the LED sits, 5.08 mm as on MX footprints. */
+const LED_NORTH = 0.508
+/** Lifted further than this from the PCB, a part no longer catches any LED light. */
+const LED_REACH = 2
 
 const ZONE_WEIGHTS = { alpha: [1, 0, 0], mod: [0, 1, 0], accent: [0, 0, 1] } as const
 
@@ -48,13 +62,27 @@ interface InstanceSlot {
   mesh: InstancedMesh
   index: number
   baseY: number
+  /** Collapsed to nothing, for parts of switch designs a key isn't using. */
+  hidden?: boolean
+}
+
+const SWITCH_PARTS = ['top', 'bottom', 'stem', 'metal'] as const
+type SwitchPart = (typeof SWITCH_PARTS)[number]
+
+interface SwitchSlot {
+  design: SwitchModel
+  /** Stems travel with the key; housings and metal stay put. */
+  moves: boolean
+  slot: InstanceSlot
 }
 
 interface KeyState {
   key: KeyDefinition
   press: number
+  /** How far this key travels, which differs between compared switches. */
+  travel: number
   caps: Record<ProfileId, InstanceSlot>
-  stem: InstanceSlot
+  switchParts: SwitchSlot[]
 }
 
 export interface RigAssets {
@@ -69,8 +97,9 @@ export interface RigAssets {
 const matrix = new Matrix4()
 
 function place(slot: InstanceSlot, key: KeyDefinition, drop: number) {
+  if (slot.hidden) matrix.makeScale(0, 0, 0)
   // Blender's Y points to the back of the board, which is three.js's -Z.
-  matrix.makeTranslation(key.x, slot.baseY - drop, -key.y)
+  else matrix.makeTranslation(key.x, slot.baseY - drop, -key.y)
   slot.mesh.setMatrixAt(slot.index, matrix)
   slot.mesh.instanceMatrix.needsUpdate = true
 }
@@ -188,44 +217,80 @@ export class KeyboardRig {
     this.desk = new Desk(layout, this.tilted.localToWorld(portPosition(layout)))
     this.root.add(this.desk.group)
 
-    const stems = this.buildSwitches(switchModel)
-    this.buildKeycaps(keycaps, legends, stems)
+    this.buildLeds()
+    const switchParts = this.buildSwitches(switchModel)
+    this.buildKeycaps(keycaps, legends, switchParts)
   }
 
+  /**
+   * One RGB LED per key, soldered to the PCB 5 mm north of the switch's centre, as on a real
+   * per-key RGB board. All of the board's light starts here.
+   */
+  private buildLeds() {
+    const keys = this.layout.keys
+    const geometry = new BoxGeometry(0.35, 0.1, 0.28)
+    // In the plate frame the PCB's top is at -0.5, and north is -z.
+    geometry.translate(0, -0.45, -LED_NORTH)
+    geometry.setAttribute(
+      'aKey',
+      new InstancedBufferAttribute(new Float32Array(keys.flatMap((key) => [key.x, -key.y])), 2),
+    )
+    const leds = instanced(geometry, createLedMaterial(), keys, 'leds')
+    keys.forEach((key, index) => place({ mesh: leds, index, baseY: 0 }, key, 0))
+    this.layers.get('pcb')!.add(leds)
+  }
+
+  /** Dims each part's glow by how far it has been lifted off the LEDs. Call every frame. */
+  updateLedReach() {
+    const pcb = this.layers.get('pcb')!.position.y
+    const reach = (layer: LayerId) => {
+      const gap = this.layers.get(layer)!.position.y - pcb
+      const near = Math.min(1, Math.max(0, 1 - gap / LED_REACH))
+      return near * near
+    }
+    uniforms.ledReachKeycaps.value = reach('keycaps')
+    uniforms.ledReachSwitches.value = reach('switches')
+    uniforms.ledReachPlate.value = reach('plate')
+  }
+
+  /**
+   * Builds every switch design for every key, each hidden until chosen. Changing switch, or
+   * comparing two of different designs, then only moves instances, with nothing to rebuild.
+   */
   private buildSwitches(model: GLTF) {
     const layer = this.layers.get('switches')!
-    const housingNode = model.scene.getObjectByName('housing') as Mesh
-    const stemNode = model.scene.getObjectByName('stem') as Mesh
-    const housingGeometry = housingNode.geometry.clone()
-    housingGeometry.setAttribute(
-      'aKey',
-      new InstancedBufferAttribute(
-        new Float32Array(this.layout.keys.flatMap((key) => [key.x, -key.y])),
-        2,
-      ),
-    )
-    const base = (housingNode.material as MeshStandardMaterial).color
-    const housings = instanced(
-      housingGeometry,
-      createHousingMaterial(base),
-      this.layout.keys,
-      'housings',
-    )
-    const stemGeometry = stemNode.geometry.clone()
-    stemGeometry.setAttribute('aKey', housingGeometry.getAttribute('aKey'))
-    const stems = instanced(stemGeometry, createStemMaterial(), this.layout.keys, 'stems')
-    this.layout.keys.forEach((key, index) => {
-      place({ mesh: housings, index, baseY: 0 }, key, 0)
-      place({ mesh: stems, index, baseY: 0 }, key, 0)
-    })
-    layer.add(housings, stems)
-    return stems
+    const keys = this.layout.keys
+    const centres = new Float32Array(keys.flatMap((key) => [key.x, -key.y]))
+    const materials: Record<SwitchPart, Material> = {
+      top: createSwitchShellMaterial('top'),
+      bottom: createSwitchShellMaterial('bottom'),
+      stem: createStemMaterial(),
+      metal: createSwitchMetalMaterial(),
+    }
+    const parts = new Map<string, SwitchSlot[]>(keys.map((key) => [key.code, []]))
+    for (const design of SWITCH_MODELS) {
+      for (const part of SWITCH_PARTS) {
+        const node = model.scene.getObjectByName(`${design}_${part}`) as Mesh | undefined
+        // Not every design has every part: the buckling spring has no separate metal.
+        if (!node) continue
+        const geometry = node.geometry.clone()
+        geometry.setAttribute('aKey', new InstancedBufferAttribute(centres, 2))
+        const mesh = instanced(geometry, materials[part], keys, `switch-${design}-${part}`)
+        keys.forEach((key, index) => {
+          const slot = { mesh, index, baseY: 0, hidden: true }
+          place(slot, key, 0)
+          parts.get(key.code)!.push({ design, moves: part === 'stem', slot })
+        })
+        layer.add(mesh)
+      }
+    }
+    return parts
   }
 
   private buildKeycaps(
     keycaps: RigAssets['keycaps'],
     legends: CanvasTexture,
-    stems: InstancedMesh,
+    switchParts: Map<string, SwitchSlot[]>,
   ) {
     const material = createKeycapMaterial(legends)
     const slots = new Map<string, Partial<Record<ProfileId, InstanceSlot>>>()
@@ -259,14 +324,15 @@ export class KeyboardRig {
       }
     }
 
-    this.layout.keys.forEach((key, index) => {
+    for (const key of this.layout.keys) {
       this.keys.set(key.code, {
         key,
         press: 0,
+        travel: this.travel,
         caps: slots.get(key.code) as Record<ProfileId, InstanceSlot>,
-        stem: { mesh: stems, index, baseY: 0 },
+        switchParts: switchParts.get(key.code)!,
       })
-    })
+    }
     this.layers.get('keycaps')!.add(this.capSets.get(this.activeProfile)!)
   }
 
@@ -321,6 +387,21 @@ export class KeyboardRig {
     gsap.fromTo(uniforms.shadow, { value: 0 }, { value: 1, duration, ease: 'power2.out' })
   }
 
+  /**
+   * Shows each key's switch: the chosen one, or while comparing, the compared one on the left
+   * half. Each half also travels as far as its own switch does.
+   */
+  setSwitches(chosen: SwitchId, compare: SwitchId | null) {
+    for (const state of this.keys.values()) {
+      const option = byId(SWITCHES, switchForKey(state.key.x, chosen, compare))
+      state.travel = option.travel
+      for (const part of state.switchParts) {
+        part.slot.hidden = part.design !== option.model
+        place(part.slot, state.key, part.moves ? state.press : 0)
+      }
+    }
+  }
+
   /** Shows a typing run on the keys, or fades it away when there is none. */
   showHeat(heat: Record<string, KeyHeat> | null) {
     if (heat) {
@@ -349,7 +430,7 @@ export class KeyboardRig {
   press(code: string) {
     const state = this.keys.get(code)
     if (state) recordPress(state.key.x, -state.key.y)
-    this.animateKey(code, this.travel)
+    this.animateKey(code, state?.travel ?? this.travel)
     gsap.to(this.flex.position, {
       y: -FLEX_DEPTH,
       duration: FLEX_SECONDS,
@@ -378,7 +459,9 @@ export class KeyboardRig {
       overwrite: true,
       onUpdate: () => {
         place(state.caps[this.activeProfile], state.key, state.press)
-        place(state.stem, state.key, state.press)
+        for (const part of state.switchParts) {
+          if (part.moves) place(part.slot, state.key, state.press)
+        }
       },
     })
   }

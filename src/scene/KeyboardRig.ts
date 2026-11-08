@@ -55,6 +55,8 @@ const FLEX_DEPTH = 0.06
 const LED_NORTH = 0.508
 /** Lifted further than this from the PCB, a part no longer catches any LED light. */
 const LED_REACH = 2
+/** Once the keycaps are this far above a part, their shadow no longer reaches it. */
+const CAP_SHADOW_REACH = 2
 
 const ZONE_WEIGHTS = { alpha: [1, 0, 0], mod: [0, 1, 0], accent: [0, 0, 1] } as const
 
@@ -240,7 +242,10 @@ export class KeyboardRig {
     this.layers.get('pcb')!.add(leds)
   }
 
-  /** Dims each part's glow by how far it has been lifted off the LEDs. Call every frame. */
+  /**
+   * Dims each part's glow by how far it has been lifted off the LEDs, and its lit colour by how
+   * close the keycaps are above it. Call every frame.
+   */
   updateLedReach() {
     const pcb = this.layers.get('pcb')!.position.y
     const reach = (layer: LayerId) => {
@@ -251,6 +256,14 @@ export class KeyboardRig {
     uniforms.ledReachKeycaps.value = reach('keycaps')
     uniforms.ledReachSwitches.value = reach('switches')
     uniforms.ledReachPlate.value = reach('plate')
+
+    const keycaps = this.layers.get('keycaps')!.position.y
+    const shade = (layer: LayerId) => {
+      const gap = keycaps - this.layers.get(layer)!.position.y
+      return Math.min(1, Math.max(0, 1 - gap / CAP_SHADOW_REACH))
+    }
+    uniforms.capShadeSwitches.value = shade('switches')
+    uniforms.capShadePlate.value = shade('plate')
   }
 
   /**

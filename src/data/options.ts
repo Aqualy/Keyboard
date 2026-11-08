@@ -9,11 +9,21 @@ export interface SpecRow {
   value: string
 }
 
+/** Each keycap set has at least one case that picks up its colours, besides white and black. */
 export const CASE_COLOURS = [
   { id: 'white', name: 'White', hex: '#ecebe7' },
   { id: 'black', name: 'Black', hex: '#1c1c1e' },
+  { id: 'graphite', name: 'Graphite', hex: '#5f6267' },
   { id: 'sky', name: 'Sky', hex: '#a8c6e4' },
   { id: 'beet', name: 'Beet', hex: '#4a2b46' },
+  // Blush and Static.
+  { id: 'rose', name: 'Rose', hex: '#e3b2b1' },
+  // Fern.
+  { id: 'forest', name: 'Forest', hex: '#3f5c49' },
+  // Neon.
+  { id: 'indigo', name: 'Indigo', hex: '#2a2250' },
+  // Lacquer.
+  { id: 'gold', name: 'Gold', hex: '#c09a57' },
 ] as const satisfies readonly Swatch[]
 
 export const KEYCAP_COLOURS = [
@@ -366,6 +376,12 @@ export const CABLES = [
   { id: 'black', name: 'Black', hex: '#1c1c1e' },
   { id: 'sky', name: 'Sky', hex: '#a8c6e4' },
   { id: 'beet', name: 'Beet', hex: '#4a2b46' },
+  // One to pick up each keycap set: Blush, Fern, Neon, Lacquer and Static.
+  { id: 'rose', name: 'Rose', hex: '#e3a9aa' },
+  { id: 'forest', name: 'Forest', hex: '#3f5c49' },
+  { id: 'magenta', name: 'Magenta', hex: '#d83a7d' },
+  { id: 'gold', name: 'Gold', hex: '#c9a35b' },
+  { id: 'graphite', name: 'Graphite', hex: '#3a3c41' },
 ] as const
 
 export const DESK_MATS = [
@@ -374,6 +390,13 @@ export const DESK_MATS = [
   { id: 'black', name: 'Black', hex: '#232326' },
   { id: 'sky', name: 'Sky', hex: '#9fbcd8' },
   { id: 'beet', name: 'Beet', hex: '#4a2b46' },
+  // Under the light keycap sets: Blush, Fern and Static.
+  { id: 'cream', name: 'Cream', hex: '#e2dccf' },
+  { id: 'rose', name: 'Rose', hex: '#d9a3a3' },
+  { id: 'forest', name: 'Forest', hex: '#34503e' },
+  // Under the dark ones: Neon and Lacquer.
+  { id: 'indigo', name: 'Indigo', hex: '#241d45' },
+  { id: 'oxblood', name: 'Oxblood', hex: '#5a1d22' },
 ] as const
 
 export type CableId = (typeof CABLES)[number]['id']

@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { SWITCHES, SWITCH_TYPES } from '../data/options'
+import { CASE_COLOURS, SWITCHES, SWITCH_TYPES } from '../data/options'
 import { DEFAULT_CONFIG, useConfig } from '../state/config'
 import { useStage } from '../state/stage'
 import { Folders } from './Folders'
@@ -55,7 +55,8 @@ describe('Folders', () => {
     const names = within(group('Case colour'))
       .getAllByRole('radio')
       .map((radio) => radio.getAttribute('aria-label'))
-    expect(names).toEqual(['White', 'Black', 'Sky', 'Beet'])
+    expect(names).toEqual(CASE_COLOURS.map((colour) => colour.name))
+    expect(names.every(Boolean)).toBe(true)
   })
 
   it('applies a colourway to the whole board', async () => {

@@ -126,7 +126,13 @@ export default function App() {
   const knob = useStage((state) => state.knobHovered || state.knobActive)
   const supported = hasGraphicsSupport()
   // The side menu folds out while the pointer is over it, or keyboard focus is inside it.
-  const [hovered, setHovered] = useState(false)
+  const [hovered, setHoveredNow] = useState(false)
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const setHovered = (over: boolean) => {
+    clearTimeout(closeTimer.current)
+    if (over) setHoveredNow(true)
+    else closeTimer.current = setTimeout(() => setHoveredNow(false), 160)
+  }
   const [focused, setFocused] = useState(false)
   const menuOpen = hovered || focused
   const { panelRef, panelHeight } = usePanelInset(mode, menuOpen)

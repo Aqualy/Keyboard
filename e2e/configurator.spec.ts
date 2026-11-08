@@ -260,13 +260,12 @@ test('releases every held key when the window loses focus', async ({ page }) => 
 test('the side menu rests as a strip and folds out on hover', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'Only wide screens have the side menu')
   await openConfigurator(page)
-  const panel = page.locator('.panel')
-  const narrow = (await panel.boundingBox())!.width
   await showMenu(page)
-  await expect.poll(async () => (await panel.boundingBox())!.width).toBeGreaterThan(narrow + 200)
+  await expect(page.locator('.panel')).toHaveAttribute('data-menu-open', 'true')
   await expect(page.locator('.folder-tab', { hasText: 'Style' })).toBeVisible()
   await page.mouse.move(1200, 450)
-  await expect.poll(async () => (await panel.boundingBox())!.width).toBeLessThan(narrow + 10)
+  await expect(page.locator('.panel')).toHaveAttribute('data-menu-open', 'false')
+  await expect(page.locator('.panel-content')).toHaveCSS('opacity', '0.001')
 })
 
 test('the typing hint retires after the first key press', async ({ page }) => {

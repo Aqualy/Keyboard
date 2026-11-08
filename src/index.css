@@ -832,28 +832,36 @@ button {
   .hints {
     left: calc(var(--stage-inset-left, 0px) + 12px);
     bottom: var(--gutter);
+    /* Slides along with the menu as it opens and closes. */
+    transition: left 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   /*
    * The menu rests as a narrow strip and folds out over the stage on hover, or when keyboard
-   * focus moves into it. Its content keeps its full width while the panel's width animates, so
-   * nothing reflows; the panel only clips it.
+   * focus moves into it. The panel always has the menu's full size and a clip reveals it, so
+   * nothing is laid out again while it moves and the browser can animate it smoothly.
    */
   .panel {
     --menu-width: clamp(340px, 30vw, 440px);
     --rail-width: 108px;
-    width: calc(var(--gutter) + var(--rail-width));
-    overflow: hidden;
+    --fold-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    width: calc(var(--gutter) + var(--menu-width));
+    clip-path: inset(0 calc(var(--menu-width) - var(--rail-width)) 0 0);
+    will-change: clip-path;
     transition:
-      width 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
+      clip-path 0.45s var(--fold-ease),
       opacity 0.3s ease,
       transform 0.45s ease;
   }
 
   .panel[data-menu-open='true'] {
-    width: calc(var(--gutter) + var(--menu-width));
+    clip-path: inset(0 0 0 0);
     /* Open, the whole panel holds the pointer, so the gaps between cards don't fold it shut. */
     pointer-events: auto;
+    transition:
+      clip-path 0.6s var(--fold-ease),
+      opacity 0.3s ease,
+      transform 0.45s ease;
   }
 
   .panel-content {
@@ -862,11 +870,13 @@ button {
     flex-direction: column;
     width: var(--menu-width);
     min-height: 0;
-    opacity: 0;
-    transform: translateX(-24px);
+    /* Not quite 0, so the browser draws the menu ahead of time and the first fold-out doesn't stall. */
+    opacity: 0.001;
+    transform: translateX(-16px);
+    will-change: opacity, transform;
     transition:
-      opacity 0.25s ease,
-      transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+      opacity 0.2s ease,
+      transform 0.45s var(--fold-ease);
   }
 
   .panel:not([data-menu-open='true']) .panel-content * {
@@ -877,8 +887,8 @@ button {
     opacity: 1;
     transform: none;
     transition:
-      opacity 0.3s ease 0.08s,
-      transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+      opacity 0.35s ease 0.05s,
+      transform 0.6s var(--fold-ease);
   }
 
   .rail {
@@ -893,10 +903,11 @@ button {
     gap: 6px;
     width: var(--rail-width);
     pointer-events: auto;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.3s ease 0.1s;
   }
 
   .panel[data-menu-open='true'] .rail {
+    transition: opacity 0.2s ease;
     opacity: 0;
     pointer-events: none;
   }

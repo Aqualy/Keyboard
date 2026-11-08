@@ -77,7 +77,7 @@ const SIDE_PANEL = '(min-width: 1001px) and (min-height: 501px)'
  * Measures the panel floating over the stage. The camera keeps the board beside the side panel on
  * wide screens, and above the whole panel on narrow ones, where it spans the bottom.
  */
-function usePanelInset(mode: string) {
+function usePanelInset(mode: string, menuOpen: boolean) {
   const panelRef = useRef<HTMLDivElement>(null)
   const [panelHeight, setPanelHeight] = useState(0)
   const setStageInset = useStage((state) => state.setStageInset)
@@ -91,9 +91,20 @@ function usePanelInset(mode: string) {
       const side = floating && window.matchMedia(SIDE_PANEL).matches
       const height = floating && !side ? panel.offsetHeight : 0
       setPanelHeight(height)
-      // The menu folds out over the stage, so the camera only keeps clear of the narrow strip.
+      // The camera keeps clear of the strip, or of the whole menu while it is folded out. The menu's
+      // content keeps its full width while folded, so its edge is known before the slide ends.
       const rail = panel.querySelector<HTMLElement>('.rail')
-      setStageInset(height, side && rail ? rail.getBoundingClientRect().right : 0)
+      const content = panel.querySelector<HTMLElement>('.panel-content')
+      let left = 0
+      if (side && rail && content) {
+        left = menuOpen
+          ? panel.getBoundingClientRect().left +
+            panel.clientLeft +
+            content.offsetLeft +
+            content.offsetWidth
+          : rail.getBoundingClientRect().right
+      }
+      setStageInset(height, left)
     }
     measure()
     const observer = new ResizeObserver(measure)
@@ -103,7 +114,7 @@ function usePanelInset(mode: string) {
       observer.disconnect()
       window.removeEventListener('resize', measure)
     }
-  }, [mode, setStageInset])
+  }, [mode, menuOpen, setStageInset])
 
   return { panelRef, panelHeight }
 }
@@ -114,7 +125,11 @@ export default function App() {
   const dark = useStage(isDark)
   const knob = useStage((state) => state.knobHovered || state.knobActive)
   const supported = hasGraphicsSupport()
-  const { panelRef, panelHeight } = usePanelInset(mode)
+  // The side menu folds out while the pointer is over it, or keyboard focus is inside it.
+  const [hovered, setHovered] = useState(false)
+  const [focused, setFocused] = useState(false)
+  const menuOpen = hovered || focused
+  const { panelRef, panelHeight } = usePanelInset(mode, menuOpen)
   const stageInset = useStage((state) => state.stageInset)
   const stageInsetLeft = useStage((state) => state.stageInsetLeft)
   const insets = {
@@ -159,7 +174,17 @@ export default function App() {
         {mode === 'test' && <TypingTest />}
         {mode === 'cinematic' && <Cinematic />}
       </div>
-      <div className="panel" ref={panelRef}>
+      <div
+        className="panel"
+        ref={panelRef}
+        data-menu-open={menuOpen}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onFocus={(event) => setFocused(event.target.matches(':focus-visible'))}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false)
+        }}
+      >
         <FolderRail />
         <div className="panel-content">
           <Summary />

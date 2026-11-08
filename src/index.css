@@ -841,7 +841,7 @@ button {
    */
   .panel {
     --menu-width: clamp(340px, 30vw, 440px);
-    --rail-width: 56px;
+    --rail-width: 108px;
     width: calc(var(--gutter) + var(--rail-width));
     overflow: hidden;
     transition:
@@ -850,8 +850,7 @@ button {
       transform 0.45s ease;
   }
 
-  .panel:hover,
-  .panel:has(:focus-visible) {
+  .panel[data-menu-open='true'] {
     width: calc(var(--gutter) + var(--menu-width));
     /* Open, the whole panel holds the pointer, so the gaps between cards don't fold it shut. */
     pointer-events: auto;
@@ -870,12 +869,11 @@ button {
       transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
-  .panel:not(:hover):not(:has(:focus-visible)) .panel-content * {
+  .panel:not([data-menu-open='true']) .panel-content * {
     pointer-events: none;
   }
 
-  .panel:hover .panel-content,
-  .panel:has(:focus-visible) .panel-content {
+  .panel[data-menu-open='true'] .panel-content {
     opacity: 1;
     transform: none;
     transition:
@@ -885,6 +883,8 @@ button {
 
   .rail {
     position: absolute;
+    /* Lines up the strip's Test with the menu's, which sits beside the title. */
+    padding-top: 16px;
     top: var(--gutter);
     bottom: var(--gutter);
     left: var(--gutter);
@@ -896,8 +896,7 @@ button {
     transition: opacity 0.25s ease;
   }
 
-  .panel:hover .rail,
-  .panel:has(:focus-visible) .rail {
+  .panel[data-menu-open='true'] .rail {
     opacity: 0;
     pointer-events: none;
   }
@@ -913,10 +912,8 @@ button {
     background: var(--card);
     color: var(--muted);
     font: 500 11px var(--mono);
-    letter-spacing: 0.09em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
   }
 
   .rail-item[data-open='true'] {
@@ -927,7 +924,7 @@ button {
     display: grid;
     flex: none;
     place-items: center;
-    height: var(--rail-width);
+    height: 56px;
     padding: 0;
     border: 0;
     border-radius: var(--radius);

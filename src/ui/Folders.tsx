@@ -309,6 +309,16 @@ export function FolderRail() {
   const setMode = useStage((state) => state.setMode)
   return (
     <nav className="rail" aria-hidden="true">
+      {/* First, as Test leads the full menu too. */}
+      <button
+        type="button"
+        tabIndex={-1}
+        className="rail-test"
+        title="Test"
+        onClick={() => setMode('test')}
+      >
+        <ArrowIcon />
+      </button>
       {SECTIONS.map((id) => (
         <button
           key={id}
@@ -321,15 +331,6 @@ export function FolderRail() {
           {TITLES[id]}
         </button>
       ))}
-      <button
-        type="button"
-        tabIndex={-1}
-        className="rail-test"
-        title="Test"
-        onClick={() => setMode('test')}
-      >
-        <ArrowIcon />
-      </button>
     </nav>
   )
 }

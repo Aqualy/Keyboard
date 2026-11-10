@@ -1148,11 +1148,8 @@ def export_glb(name):
         export_apply=True,
         export_yup=True,
         export_materials="EXPORT",
-        export_draco_mesh_compression_enable=True,
-        export_draco_mesh_compression_level=6,
-        export_draco_position_quantization=14,
-        export_draco_normal_quantization=10,
-        export_draco_texcoord_quantization=10,
+        # Exported uncompressed; tools/compress-models.mjs applies meshopt afterwards (run.mjs).
+        export_draco_mesh_compression_enable=False,
         export_animations=False,
         export_skins=False,
         export_morph=False,

@@ -18,7 +18,9 @@ import { ArrowIcon } from './ui/icons'
 import { Cinematic } from './ui/Cinematic'
 import { OrbitHint, PartLabel, StageTools, TypeHint, VolumeLabel } from './ui/StageOverlay'
 
-const Stage = lazy(() => import('./scene/Stage').then(({ Stage }) => ({ default: Stage })))
+// The 3D code is the largest download, so it starts now rather than waiting for the first render.
+const stageModule = import('./scene/Stage')
+const Stage = lazy(() => stageModule.then(({ Stage }) => ({ default: Stage })))
 
 function hasGraphicsSupport() {
   if ('gpu' in navigator) return true

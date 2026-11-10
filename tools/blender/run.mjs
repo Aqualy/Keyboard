@@ -5,10 +5,12 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { compressModel } from '../compress-models.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const script = join(here, 'build_gmk67.py')
 const layoutsDir = join(here, '../../src/data/layouts')
+const modelsDir = join(here, '../../public/models')
 
 const BOARD_TASKS = new Set(['keyboard', 'shadow', 'preview'])
 const DEFAULT_TASKS = ['keyboard', 'switch', 'keycaps', 'environment', 'shadow']
@@ -58,4 +60,9 @@ if (board.length) {
     console.log(`=== ${layout}`)
     run(board, layout)
   }
+}
+
+// Blender exports plain glTF; every new model is compressed with meshopt. Compressed ones are skipped.
+for (const file of readdirSync(modelsDir).filter((name) => name.endsWith('.glb'))) {
+  await compressModel(join(modelsDir, file))
 }

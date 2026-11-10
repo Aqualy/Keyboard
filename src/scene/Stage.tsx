@@ -1,9 +1,6 @@
-import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
-import { Suspense, use, useEffect, useMemo } from 'react'
-import { EquirectangularReflectionMapping, SRGBColorSpace, TextureLoader } from 'three'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Suspense, use, useEffect, useLayoutEffect, useMemo } from 'react'
 import { WebGPURenderer } from 'three/webgpu'
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { LAYOUTS, type Layout } from '../data/layout'
 import { layoutOf, useConfig } from '../state/config'
 import { useStage } from '../state/stage'
@@ -15,41 +12,20 @@ import { Lighting } from './Lighting'
 import { KeyboardRig } from './KeyboardRig'
 import { arrangementFor } from './layers'
 import { createLegendTexture, legendFontReady, repaintLegends } from './legends'
+import { loadBoard } from './models'
 import { usesSymbols } from '../data/keysets'
 
-const base = import.meta.env.BASE_URL
-const model = (file: string) => `${base}models/${file}`
-
-const draco = new DRACOLoader()
-const withDraco = (loader: GLTFLoader) => {
-  loader.setDRACOLoader(draco)
-}
 const fontReady = legendFontReady()
 
-const SHARED_MODELS = ['keycaps-cherry.glb', 'keycaps-sa.glb', 'keycaps-xda.glb', 'switches.glb']
-
-// Every board is small, so all of them load up front and changing size or standard is instant.
-useLoader.preload(
-  GLTFLoader,
-  LAYOUTS.map((layout) => model(`${layout.id}.glb`)),
-  withDraco,
-)
-useLoader.preload(
-  TextureLoader,
-  LAYOUTS.map((layout) => model(`shadow-${layout.id}.webp`)),
-)
+/** Once the first board shows, the others load in idle time, so changing size or standard is instant. */
+function preloadOtherBoards() {
+  const idle = window.requestIdleCallback ?? ((callback: () => void) => setTimeout(callback, 200))
+  for (const layout of LAYOUTS) idle(() => void loadBoard(layout.id).catch(() => undefined))
+}
 
 function Keyboard({ layout }: { layout: Layout }) {
   use(fontReady)
-  const [keyboard, cherry, sa, xda, switchModel] = useLoader(
-    GLTFLoader,
-    [`${layout.id}.glb`, ...SHARED_MODELS].map(model),
-    withDraco,
-  )
-  const [shadow, environment] = useLoader(TextureLoader, [
-    model(`shadow-${layout.id}.webp`),
-    model('environment.webp'),
-  ])
+  const { keyboard, keycaps, switchModel, shadow, environment } = use(loadBoard(layout.id))
   const scene = useThree((state) => state.scene)
 
   const legends = useMemo(() => {
@@ -61,12 +37,12 @@ function Keyboard({ layout }: { layout: Layout }) {
       new KeyboardRig({
         layout,
         keyboard,
-        keycaps: { cherry, sa, xda },
+        keycaps,
         switchModel,
         shadow,
         legends,
       }),
-    [layout, keyboard, cherry, sa, xda, switchModel, shadow, legends],
+    [layout, keyboard, keycaps, switchModel, shadow, legends],
   )
 
   // The LEDs are on the PCB, so parts lifted off it in the exploded view stop glowing.
@@ -86,13 +62,17 @@ function Keyboard({ layout }: { layout: Layout }) {
     [legends, layout],
   )
 
-  useEffect(() => {
-    environment.mapping = EquirectangularReflectionMapping
-    environment.colorSpace = SRGBColorSpace
+  // Set before the first frame: a frame drawn without it compiled every material twice, once without
+  // reflections and once with them, which doubled the first visit's shader compile time.
+  useLayoutEffect(() => {
     scene.environment = environment
+  }, [environment, scene])
+
+  useEffect(() => {
     rig.reveal()
     useStage.getState().setReady()
-  }, [environment, scene, rig])
+    preloadOtherBoards()
+  }, [rig])
 
   useEffect(() => {
     const { mode, section, heatmap } = useStage.getState()

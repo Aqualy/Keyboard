@@ -2,7 +2,7 @@
 // Nothing here imports three, so main.tsx can call it at once. src/scene/models.ts parses what lands here.
 
 const base = import.meta.env.BASE_URL
-export const assetUrl = (file: string) => `${base}models/${file}`
+export const assetUrl = (file: string) => `${base}models/${file}?v=${__MODELS_VERSION__}`
 
 /** Models every board needs, whatever its size or standard. */
 export const SHARED_MODELS = [

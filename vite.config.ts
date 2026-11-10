@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { createHash } from 'node:crypto'
 import { gzipSync } from 'node:zlib'
 import type { Plugin } from 'vite'
 import { defineConfig } from 'vitest/config'
@@ -27,7 +28,20 @@ function gzipModels(): Plugin {
   }
 }
 
+/**
+ * A hash of everything in public/models. Model URLs carry it (`assetUrl` in src/scene/assets.ts), so new
+ * code never meets a stale model from the CDN, which keeps files for five minutes after a deploy.
+ */
+function modelsVersion() {
+  const hash = createHash('sha256')
+  for (const name of readdirSync('public/models').sort()) {
+    hash.update(name).update(readFileSync(join('public/models', name)))
+  }
+  return hash.digest('hex').slice(0, 10)
+}
+
 export default defineConfig({
+  define: { __MODELS_VERSION__: JSON.stringify(modelsVersion()) },
   plugins: [react(), gzipModels()],
   base: './',
   build: {

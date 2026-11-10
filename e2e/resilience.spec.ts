@@ -12,7 +12,7 @@ test('explains itself when 3D graphics are unavailable', async ({ page }) => {
 })
 
 test('shows an error when the model fails to load', async ({ page }) => {
-  await page.route('**/models/65-ansi.glb', (route) => route.abort())
+  await page.route('**/models/65-ansi.glb?*', (route) => route.abort())
   await page.goto('./')
   await expect(page.getByText('could not load')).toBeVisible()
 })

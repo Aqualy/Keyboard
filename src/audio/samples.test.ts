@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { keyByCode, LAYOUTS, layoutFor } from '../data/layout'
 import { hasLongKeySamples, PLATES, SWITCHES } from '../data/options'
 import {
+  soundOnset,
   PLATE_TONES,
   playbackVariation,
   PRESS_SAMPLES,
@@ -120,4 +121,28 @@ describe('switchGain', () => {
       expect(peak).toBeLessThanOrEqual(-1)
     },
   )
+})
+
+describe('soundOnset', () => {
+  const rate = 1000
+  const withSilence = (leading: number) => {
+    const samples = new Float32Array(leading + 50)
+    samples.fill(0.5, leading)
+    return samples
+  }
+
+  it('skips leading silence, keeping a couple of milliseconds before the click', () => {
+    expect(soundOnset(withSilence(60), rate)).toBeCloseTo(0.058, 5)
+  })
+
+  it('ignores faint noise before the click', () => {
+    const samples = withSilence(40)
+    samples.fill(0.001, 0, 40)
+    expect(soundOnset(samples, rate)).toBeCloseTo(0.038, 5)
+  })
+
+  it('starts at zero when the sound starts at once or never', () => {
+    expect(soundOnset(withSilence(0), rate)).toBe(0)
+    expect(soundOnset(new Float32Array(100), rate)).toBe(0)
+  })
 })

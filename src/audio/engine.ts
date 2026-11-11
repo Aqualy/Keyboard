@@ -6,6 +6,7 @@ import {
   playbackVariation,
   samplePaths,
   sampleName,
+  soundOnset,
   switchGain,
   type KeyEdge,
 } from './samples'
@@ -18,6 +19,8 @@ const url = (switchId: SwitchId, sample: string) =>
 
 let context: AudioContext | undefined
 const decoded = new Map<SwitchId, Promise<Map<string, AudioBuffer>>>()
+/** Where each recording's sound starts, so playback skips its leading silence. */
+const onsets = new WeakMap<AudioBuffer, number>()
 
 function audioContext() {
   if (!context) {
@@ -33,7 +36,9 @@ function audioContext() {
 async function decodeSample(audio: AudioContext, switchId: SwitchId, sample: string) {
   const response = await fetch(url(switchId, sample))
   if (!response.ok) throw new Error(`Could not load sound: ${sample}`)
-  return [sample, await audio.decodeAudioData(await response.arrayBuffer())] as const
+  const buffer = await audio.decodeAudioData(await response.arrayBuffer())
+  onsets.set(buffer, soundOnset(buffer.getChannelData(0), buffer.sampleRate))
+  return [sample, buffer] as const
 }
 
 function loadSwitch(audio: AudioContext, switchId: SwitchId) {
@@ -78,7 +83,7 @@ function play(
   panner.pan.value = pan
 
   source.connect(filter).connect(volume).connect(panner).connect(audio.destination)
-  source.start()
+  source.start(0, onsets.get(buffer) ?? 0)
 }
 
 async function playSample(

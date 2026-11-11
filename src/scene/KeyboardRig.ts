@@ -465,17 +465,26 @@ export class KeyboardRig {
   private animateKey(code: string, depth: number) {
     const state = this.keys.get(code)
     if (!state) return
+    const placeKey = () => {
+      place(state.caps[this.activeProfile], state.key, state.press)
+      for (const part of state.switchParts) {
+        if (part.moves) place(part.slot, state.key, state.press)
+      }
+    }
+    // A press shows on the very next frame, as a real key bottoms out in a few milliseconds.
+    // Only the release eases back up.
+    if (depth > 0) {
+      gsap.killTweensOf(state)
+      state.press = depth
+      placeKey()
+      return
+    }
     gsap.to(state, {
       press: depth,
       duration: motion(PRESS_SECONDS),
       ease: 'power1.out',
       overwrite: true,
-      onUpdate: () => {
-        place(state.caps[this.activeProfile], state.key, state.press)
-        for (const part of state.switchParts) {
-          if (part.moves) place(part.slot, state.key, state.press)
-        }
-      },
+      onUpdate: placeKey,
     })
   }
 }

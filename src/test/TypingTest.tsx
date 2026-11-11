@@ -69,7 +69,20 @@ export function TypingTest() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMode('configure')
+      if (event.key === 'Escape') {
+        setMode('configure')
+        return
+      }
+      // A key that arrives while something else has the focus still types. Focusing the input
+      // during keydown lets this very key land in it.
+      const input = inputRef.current
+      if (!input || input.disabled || document.activeElement === input) return
+      if (event.ctrlKey || event.metaKey || event.altKey) return
+      if (event.key === 'Backspace') {
+        event.preventDefault()
+        setRun((state) => eraseCharacter(state))
+      }
+      if (event.key.length === 1 || event.key === 'Backspace') input.focus()
     }
     const onTap = (event: Event) => {
       const code = (event as CustomEvent<string>).detail
@@ -122,6 +135,9 @@ export function TypingTest() {
           }
         }}
         onInput={onInput}
+        // A click anywhere else, on the board or the page, takes the focus. It comes straight
+        // back, so typing carries on. Buttons still get their click.
+        onBlur={() => requestAnimationFrame(focusInput)}
         disabled={finished}
       />
       {finished ? (

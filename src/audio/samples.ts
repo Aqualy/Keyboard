@@ -90,3 +90,19 @@ export function playbackVariation(x: number, keyboardHalfWidth: number, roll = M
     pan: Math.max(-1, Math.min(1, x / keyboardHalfWidth)) * 0.45,
   }
 }
+
+/** Kept before the first loud sample, so the start of the click itself is never cut. */
+const ONSET_LEAD_SECONDS = 0.002
+
+/**
+ * Where a recording's sound starts, in seconds. Several recordings open with up to 60 ms of
+ * silence, plus the MP3 decoder's own padding, which made those keys sound late. Playback skips it.
+ */
+export function soundOnset(samples: Float32Array, sampleRate: number) {
+  let peak = 0
+  for (const sample of samples) peak = Math.max(peak, Math.abs(sample))
+  const threshold = Math.max(0.004, peak * 0.03)
+  const first = samples.findIndex((sample) => Math.abs(sample) >= threshold)
+  if (first <= 0) return 0
+  return Math.max(0, first / sampleRate - ONSET_LEAD_SECONDS)
+}

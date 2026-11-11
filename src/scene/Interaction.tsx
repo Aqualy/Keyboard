@@ -184,7 +184,9 @@ export function Interaction({ rig }: { rig: KeyboardRig }) {
         const code = keyCodeOf(event)
         if (code) {
           startKeyPress(code, event)
-          if (mode === 'test') announceKeyTap(code)
+          // On touch screens a tapped key types. A mouse click only presses it: with a physical
+          // keyboard at hand, a click on the board is meant as a look, not a letter.
+          if (mode === 'test' && event.nativeEvent.pointerType !== 'mouse') announceKeyTap(code)
         }
       }}
       onPointerMove={(event: ThreeEvent<PointerEvent>) => {
